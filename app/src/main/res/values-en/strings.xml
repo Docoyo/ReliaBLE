@@ -37,5 +37,6 @@
     <string name="connected">Connected</string>
     <string name="disconnect">Disconnect</string>
     <string name="enter">Enter</string>
+    <string name="descriptors">descriptors</string>
 
 </resources>

@@ -3,6 +3,7 @@ package com.clj.blesample.operation;
 
 import android.annotation.TargetApi;
 import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -38,7 +39,7 @@ public class CharacteristicListFragment extends Fragment {
 
     private void initView(View v) {
         mResultAdapter = new ResultAdapter(getActivity());
-        ListView listView_device = (ListView) v.findViewById(R.id.list_service);
+        ListView listView_device = v.findViewById(R.id.list_service);
         listView_device.setAdapter(mResultAdapter);
         listView_device.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -139,13 +140,13 @@ public class CharacteristicListFragment extends Fragment {
             if (convertView != null) {
                 holder = (ViewHolder) convertView.getTag();
             } else {
-                convertView = View.inflate(context, R.layout.adapter_service, null);
+                convertView = View.inflate(context, R.layout.adapter_characteristic, null);
                 holder = new ViewHolder();
                 convertView.setTag(holder);
-                holder.txt_title = (TextView) convertView.findViewById(R.id.txt_title);
-                holder.txt_uuid = (TextView) convertView.findViewById(R.id.txt_uuid);
-                holder.txt_type = (TextView) convertView.findViewById(R.id.txt_type);
-                holder.img_next = (ImageView) convertView.findViewById(R.id.img_next);
+                holder.txt_title = convertView.findViewById(R.id.txt_title);
+                holder.txt_uuid = convertView.findViewById(R.id.txt_uuid);
+                holder.txt_type = convertView.findViewById(R.id.txt_type);
+                holder.txt_descriptors = convertView.findViewById(R.id.txt_descriptors);
             }
 
             BluetoothGattCharacteristic characteristic = characteristicList.get(position);
@@ -181,19 +182,21 @@ public class CharacteristicListFragment extends Fragment {
             }
             if (property.length() > 0) {
                 holder.txt_type.setText(String.valueOf(getActivity().getString(R.string.characteristic) + "( " + property.toString() + ")"));
-                holder.img_next.setVisibility(View.VISIBLE);
-            } else {
-                holder.img_next.setVisibility(View.INVISIBLE);
+            }
+
+            List<BluetoothGattDescriptor> descriptors = characteristic.getDescriptors();
+            if (descriptors != null && !descriptors.isEmpty()){
+                holder.txt_descriptors.setText(getActivity().getString(R.string.descriptors) + " (" + String.valueOf(descriptors.size()) + ") ");
             }
 
             return convertView;
         }
 
         class ViewHolder {
+            TextView txt_descriptors;
             TextView txt_title;
             TextView txt_uuid;
             TextView txt_type;
-            ImageView img_next;
         }
     }
 }

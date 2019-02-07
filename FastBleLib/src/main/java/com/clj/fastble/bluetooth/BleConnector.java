@@ -17,6 +17,7 @@ import com.clj.fastble.callback.BleIndicateCallback;
 import com.clj.fastble.callback.BleMtuChangedCallback;
 import com.clj.fastble.callback.BleNotifyCallback;
 import com.clj.fastble.callback.BleReadCallback;
+import com.clj.fastble.callback.BleReadDescriptorCallback;
 import com.clj.fastble.callback.BleRssiCallback;
 import com.clj.fastble.callback.BleWriteCallback;
 import com.clj.fastble.data.BleMsg;
@@ -38,6 +39,7 @@ public class BleConnector {
     private BluetoothGattCharacteristic mCharacteristic;
     private BleBluetooth mBleBluetooth;
     private Handler mHandler;
+    private BluetoothGattDescriptor mDescriptor;
 
     BleConnector(BleBluetooth bleBluetooth) {
         this.mBleBluetooth = bleBluetooth;
@@ -163,6 +165,30 @@ public class BleConnector {
                         break;
                     }
 
+                    case BleMsg.MSG_DESC_READ_START: {
+                        BleReadDescriptorCallback readCallback = (BleReadDescriptorCallback) msg.obj;
+                        if (readCallback != null)
+                            readCallback.onReadFailure(new TimeoutException());
+                        break;
+                    }
+
+                    case BleMsg.MSG_DESC_READ_RESULT: {
+                        readDescriptorMsgInit();
+
+                        BleReadDescriptorCallback readDescriptorCallback = (BleReadDescriptorCallback) msg.obj;
+                        Bundle bundle = msg.getData();
+                        int status = bundle.getInt(BleMsg.KEY_READ_DESC_BUNDLE_STATUS);
+                        byte[] value = bundle.getByteArray(BleMsg.KEY_READ_DESC_BUNDLE_VALUE);
+                        if (readDescriptorCallback != null) {
+                            if (status == BluetoothGatt.GATT_SUCCESS) {
+                                readDescriptorCallback.onReadSuccess(value);
+                            } else {
+                                readDescriptorCallback.onReadFailure(new GattException(status));
+                            }
+                        }
+                        break;
+                    }
+
                     case BleMsg.MSG_READ_RSSI_START: {
                         BleRssiCallback rssiCallback = (BleRssiCallback) msg.obj;
                         if (rssiCallback != null)
@@ -216,18 +242,25 @@ public class BleConnector {
 
     }
 
-    private BleConnector withUUID(UUID serviceUUID, UUID characteristicUUID) {
+    private BleConnector withUUID(UUID serviceUUID, UUID characteristicUUID, UUID descriptorUUID) {
         if (serviceUUID != null && mBluetoothGatt != null) {
             mGattService = mBluetoothGatt.getService(serviceUUID);
         }
         if (mGattService != null && characteristicUUID != null) {
             mCharacteristic = mGattService.getCharacteristic(characteristicUUID);
         }
+        if (mGattService != null && descriptorUUID != null) {
+            mDescriptor = mCharacteristic.getDescriptor(descriptorUUID);
+        }
         return this;
     }
 
     public BleConnector withUUIDString(String serviceUUID, String characteristicUUID) {
-        return withUUID(formUUID(serviceUUID), formUUID(characteristicUUID));
+        return withUUID(formUUID(serviceUUID), formUUID(characteristicUUID), null);
+    }
+
+    public BleConnector withUUIDString(String serviceUUID, String characteristicUUID, String descriptorUUID) {
+        return withUUID(formUUID(serviceUUID), formUUID(characteristicUUID), formUUID(descriptorUUID));
     }
 
     private UUID formUUID(String uuid) {
@@ -441,6 +474,24 @@ public class BleConnector {
     }
 
     /**
+     * read
+     */
+    public void readDescriptor(BleReadDescriptorCallback bleReadDescriptorCallback, String uuid_descriptor) {
+        if (mCharacteristic != null && mDescriptor != null) {
+
+            handleDescriptorReadCallback(bleReadDescriptorCallback, uuid_descriptor);
+            if (!mBluetoothGatt.readDescriptor(mDescriptor)) {
+                readDescriptorMsgInit();
+                if (bleReadDescriptorCallback != null)
+                    bleReadDescriptorCallback.onReadFailure(new OtherException("gatt readCharacteristic fail"));
+            }
+        } else {
+            if (bleReadDescriptorCallback != null)
+                bleReadDescriptorCallback.onReadFailure(new OtherException("this characteristic not support read!"));
+        }
+    }
+
+    /**
      * rssi
      */
     public void readRemoteRssi(BleRssiCallback bleRssiCallback) {
@@ -554,6 +605,22 @@ public class BleConnector {
     }
 
     /**
+     * read descriptor
+     */
+    private void handleDescriptorReadCallback(BleReadDescriptorCallback bleReadDescriptorCallback,
+                                                  String uuid_read) {
+        if (bleReadDescriptorCallback != null) {
+            readDescriptorMsgInit();
+            bleReadDescriptorCallback.setKey(uuid_read);
+            bleReadDescriptorCallback.setHandler(mHandler);
+            mBleBluetooth.addReadDescritptorCallback(uuid_read, bleReadDescriptorCallback);
+            mHandler.sendMessageDelayed(
+                    mHandler.obtainMessage(BleMsg.MSG_DESC_READ_START, bleReadDescriptorCallback),
+                    BleManager.getInstance().getOperateTimeout());
+        }
+    }
+
+    /**
      * rssi
      */
     private void handleRSSIReadCallback(BleRssiCallback bleRssiCallback) {
@@ -595,6 +662,10 @@ public class BleConnector {
 
     public void readMsgInit() {
         mHandler.removeMessages(BleMsg.MSG_CHA_READ_START);
+    }
+
+    public void readDescriptorMsgInit() {
+        mHandler.removeMessages(BleMsg.MSG_DESC_READ_START);
     }
 
     public void rssiMsgInit() {

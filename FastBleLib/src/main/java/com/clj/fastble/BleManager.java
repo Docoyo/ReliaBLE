@@ -24,6 +24,7 @@ import com.clj.fastble.callback.BleIndicateCallback;
 import com.clj.fastble.callback.BleMtuChangedCallback;
 import com.clj.fastble.callback.BleNotifyCallback;
 import com.clj.fastble.callback.BleReadCallback;
+import com.clj.fastble.callback.BleReadDescriptorCallback;
 import com.clj.fastble.callback.BleRssiCallback;
 import com.clj.fastble.callback.BleScanAndConnectCallback;
 import com.clj.fastble.callback.BleScanCallback;
@@ -643,12 +644,12 @@ public class BleManager {
      *
      * @param bleDevice
      * @param uuid_service
-     * @param uuid_read
+     * @param uuid_characteristic
      * @param callback
      */
     public void read(BleDevice bleDevice,
                      String uuid_service,
-                     String uuid_read,
+                     String uuid_characteristic,
                      BleReadCallback callback) {
         if (callback == null) {
             throw new IllegalArgumentException("BleReadCallback can not be Null!");
@@ -659,10 +660,38 @@ public class BleManager {
             callback.onReadFailure(new OtherException("This device is not connected!"));
         } else {
             bleBluetooth.newBleConnector()
-                    .withUUIDString(uuid_service, uuid_read)
-                    .readCharacteristic(callback, uuid_read);
+                    .withUUIDString(uuid_service, uuid_characteristic)
+                    .readCharacteristic(callback, uuid_characteristic);
         }
     }
+
+    /**
+     * read Descriptor
+     *
+     * @param bleDevice
+     * @param uuid_service
+     * @param uuid_characteristic
+     * @param uuid_descriptor
+     * @param callback
+     */
+    public void readDescriptor(BleDevice bleDevice,
+                     String uuid_service,
+                     String uuid_characteristic, String uuid_descriptor,
+                     BleReadDescriptorCallback callback) {
+        if (callback == null) {
+            throw new IllegalArgumentException("BleReadCallback can not be Null!");
+        }
+
+        BleBluetooth bleBluetooth = multipleBluetoothController.getBleBluetooth(bleDevice);
+        if (bleBluetooth == null) {
+            callback.onReadFailure(new OtherException("This device is not connected!"));
+        } else {
+            bleBluetooth.newBleConnector()
+                    .withUUIDString(uuid_service, uuid_characteristic, uuid_descriptor)
+                    .readDescriptor(callback, uuid_descriptor);
+        }
+    }
+
 
     /**
      * read Rssi
@@ -683,6 +712,8 @@ public class BleManager {
             bleBluetooth.newBleConnector().readRemoteRssi(callback);
         }
     }
+
+
 
     /**
      * set Mtu

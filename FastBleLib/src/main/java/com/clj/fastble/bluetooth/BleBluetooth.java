@@ -18,6 +18,7 @@ import com.clj.fastble.callback.BleIndicateCallback;
 import com.clj.fastble.callback.BleMtuChangedCallback;
 import com.clj.fastble.callback.BleNotifyCallback;
 import com.clj.fastble.callback.BleReadCallback;
+import com.clj.fastble.callback.BleReadDescriptorCallback;
 import com.clj.fastble.callback.BleRssiCallback;
 import com.clj.fastble.callback.BleWriteCallback;
 import com.clj.fastble.data.BleConnectStateParameter;
@@ -45,6 +46,7 @@ public class BleBluetooth {
     private HashMap<String, BleIndicateCallback> bleIndicateCallbackHashMap = new HashMap<>();
     private HashMap<String, BleWriteCallback> bleWriteCallbackHashMap = new HashMap<>();
     private HashMap<String, BleReadCallback> bleReadCallbackHashMap = new HashMap<>();
+    private HashMap<String, BleReadDescriptorCallback> bleReadDescriptorCallbackHashMap = new HashMap<>();
 
     private LastState lastState;
     private boolean isActiveDisconnect = false;
@@ -83,6 +85,10 @@ public class BleBluetooth {
 
     public synchronized void addReadCallback(String uuid, BleReadCallback bleReadCallback) {
         bleReadCallbackHashMap.put(uuid, bleReadCallback);
+    }
+
+    public void addReadDescritptorCallback(String uuid, BleReadDescriptorCallback bleReadDescriptorCallback) {
+        bleReadDescriptorCallbackHashMap.put(uuid, bleReadDescriptorCallback);
     }
 
     public synchronized void removeNotifyCallback(String uuid) {
@@ -237,6 +243,7 @@ public class BleBluetooth {
             bluetoothGatt.close();
         }
     }
+
 
     private final class MainHandler extends Handler {
 
@@ -558,6 +565,33 @@ public class BleBluetooth {
                             Bundle bundle = new Bundle();
                             bundle.putInt(BleMsg.KEY_READ_BUNDLE_STATUS, status);
                             bundle.putByteArray(BleMsg.KEY_READ_BUNDLE_VALUE, characteristic.getValue());
+                            message.setData(bundle);
+                            handler.sendMessage(message);
+                        }
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+            super.onDescriptorRead(gatt, descriptor, status);
+
+            Iterator iterator = bleReadDescriptorCallbackHashMap.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry entry = (Map.Entry) iterator.next();
+                Object callback = entry.getValue();
+                if (callback instanceof BleReadDescriptorCallback) {
+                    BleReadDescriptorCallback bleReadDescriptorCallback = (BleReadDescriptorCallback) callback;
+                    if (descriptor.getUuid().toString().equalsIgnoreCase(bleReadDescriptorCallback.getKey())) {
+                        Handler handler = bleReadDescriptorCallback.getHandler();
+                        if (handler != null) {
+                            Message message = handler.obtainMessage();
+                            message.what = BleMsg.MSG_DESC_READ_RESULT;
+                            message.obj = bleReadDescriptorCallback;
+                            Bundle bundle = new Bundle();
+                            bundle.putInt(BleMsg.KEY_READ_DESC_BUNDLE_STATUS, status);
+                            bundle.putByteArray(BleMsg.KEY_READ_DESC_BUNDLE_VALUE, descriptor.getValue());
                             message.setData(bundle);
                             handler.sendMessage(message);
                         }

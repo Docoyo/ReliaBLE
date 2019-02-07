@@ -11,10 +11,18 @@
 
         <Button
             android:id="@+id/btn"
-            android:layout_width="match_parent"
+            android:layout_width="100dp"
             android:layout_height="50dp"
             android:gravity="center"
             android:textSize="15sp" />
+
+        <Button
+            android:id="@+id/btn_descriptors"
+            android:layout_width="100dp"
+            android:layout_height="50dp"
+            android:gravity="center"
+            android:textSize="15sp"
+            android:visibility="invisible"/>
 
     </LinearLayout>
 
