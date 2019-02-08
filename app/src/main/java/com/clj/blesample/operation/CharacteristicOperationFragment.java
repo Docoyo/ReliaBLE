@@ -29,7 +29,6 @@ import com.clj.fastble.exception.BleException;
 import com.clj.fastble.utils.HexUtil;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
@@ -49,6 +48,17 @@ public class CharacteristicOperationFragment extends Fragment {
         View v = inflater.inflate(R.layout.fragment_characteric_operation, null);
         initView(v);
         return v;
+    }
+
+    private boolean isPrintable(byte[] buffer){
+        if (buffer == null || buffer.length < 1)
+            return false;
+
+        for (byte b : buffer){
+            if (b <= 32 || b >= 127)
+                return false;
+        }
+        return true;
     }
 
     private void initView(View v) {
@@ -100,7 +110,13 @@ public class CharacteristicOperationFragment extends Fragment {
                                 }
 
                                 for (int i = 0; i < datas.size() && i < descriptors.size(); i++) {
-                                    String descInfo = getActivity().getString(R.string.descriptors) + " " + descriptors.get(i).getUuid().toString() + " -> " + new String(datas.get(i));
+                                    byte[] rawValue = descriptors.get(i).getValue();
+                                    String value = HexUtil.formatHexString(rawValue);
+                                    if (isPrintable(rawValue))
+                                        value = value + "(" + new String(rawValue) + ")";
+
+
+                                    String descInfo = getActivity().getString(R.string.descriptors) + " " + descriptors.get(i).getUuid().toString() + " -> " + value;
                                     Log.i("Descriptor", descInfo);
                                     runOnUiThread(() -> {
                                         addText(txt, descInfo);
