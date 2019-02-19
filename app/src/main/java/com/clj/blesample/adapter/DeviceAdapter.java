@@ -90,15 +90,15 @@ public class DeviceAdapter extends BaseAdapter {
             convertView = View.inflate(context, R.layout.adapter_device, null);
             holder = new ViewHolder();
             convertView.setTag(holder);
-            holder.img_blue = (ImageView) convertView.findViewById(R.id.img_blue);
-            holder.txt_name = (TextView) convertView.findViewById(R.id.txt_name);
-            holder.txt_mac = (TextView) convertView.findViewById(R.id.txt_mac);
-            holder.txt_rssi = (TextView) convertView.findViewById(R.id.txt_rssi);
-            holder.layout_idle = (LinearLayout) convertView.findViewById(R.id.layout_idle);
-            holder.layout_connected = (LinearLayout) convertView.findViewById(R.id.layout_connected);
-            holder.btn_disconnect = (Button) convertView.findViewById(R.id.btn_disconnect);
-            holder.btn_connect = (Button) convertView.findViewById(R.id.btn_connect);
-            holder.btn_detail = (Button) convertView.findViewById(R.id.btn_detail);
+            holder.img_blue = convertView.findViewById(R.id.img_blue);
+            holder.txt_name = convertView.findViewById(R.id.txt_name);
+            holder.txt_mac = convertView.findViewById(R.id.txt_mac);
+            holder.txt_rssi = convertView.findViewById(R.id.txt_rssi);
+            holder.layout_idle = convertView.findViewById(R.id.layout_idle);
+            holder.layout_connected = convertView.findViewById(R.id.layout_connected);
+            holder.btn_disconnect = convertView.findViewById(R.id.btn_disconnect);
+            holder.btn_connect = convertView.findViewById(R.id.btn_connect);
+            holder.btn_detail = convertView.findViewById(R.id.btn_detail);
         }
 
         final BleDevice bleDevice = getItem(position);

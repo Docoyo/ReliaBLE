@@ -118,25 +118,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void initView() {
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        btn_scan = (Button) findViewById(R.id.btn_scan);
+        btn_scan = findViewById(R.id.btn_scan);
         btn_scan.setText(getString(R.string.start_scan));
         btn_scan.setOnClickListener(this);
 
-        et_name = (EditText) findViewById(R.id.et_name);
-        et_mac = (EditText) findViewById(R.id.et_mac);
-        et_uuid = (EditText) findViewById(R.id.et_uuid);
-        sw_auto = (Switch) findViewById(R.id.sw_auto);
+        et_name = findViewById(R.id.et_name);
+        et_mac = findViewById(R.id.et_mac);
+        et_uuid = findViewById(R.id.et_uuid);
+        sw_auto = findViewById(R.id.sw_auto);
 
-        layout_setting = (LinearLayout) findViewById(R.id.layout_setting);
-        txt_setting = (TextView) findViewById(R.id.txt_setting);
+        layout_setting = findViewById(R.id.layout_setting);
+        txt_setting = findViewById(R.id.txt_setting);
         txt_setting.setOnClickListener(this);
         layout_setting.setVisibility(View.GONE);
         txt_setting.setText(getString(R.string.expand_search_settings));
 
-        img_loading = (ImageView) findViewById(R.id.img_loading);
+        img_loading = findViewById(R.id.img_loading);
         operatingAnim = AnimationUtils.loadAnimation(this, R.anim.rotate);
         operatingAnim.setInterpolator(new LinearInterpolator());
         progressDialog = new ProgressDialog(this);
@@ -167,7 +167,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
             }
         });
-        ListView listView_device = (ListView) findViewById(R.id.list_device);
+        ListView listView_device = findViewById(R.id.list_device);
         listView_device.setAdapter(mDeviceAdapter);
     }
 

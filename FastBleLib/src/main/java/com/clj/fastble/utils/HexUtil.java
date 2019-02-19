@@ -48,7 +48,7 @@ public class HexUtil {
 
     public static String formatHexString(byte[] data, boolean addSpace) {
         if (data == null || data.length < 1)
-            return null;
+            return "";
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < data.length; i++) {
             String hex = Integer.toHexString(data[i] & 0xFF);

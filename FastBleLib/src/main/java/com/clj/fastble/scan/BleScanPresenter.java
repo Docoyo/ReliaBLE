@@ -63,12 +63,7 @@ public abstract class BleScanPresenter implements BluetoothAdapter.LeScanCallbac
     }
 
     private void handleResult(final BleDevice bleDevice) {
-        mMainHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                onLeScan(bleDevice);
-            }
-        });
+        mMainHandler.post(() -> onLeScan(bleDevice));
         checkDevice(bleDevice);
     }
 

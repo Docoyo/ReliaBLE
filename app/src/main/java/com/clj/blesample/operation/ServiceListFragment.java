@@ -37,11 +37,11 @@ public class ServiceListFragment extends Fragment {
     }
 
     private void initView(View v) {
-        txt_name = (TextView) v.findViewById(R.id.txt_name);
-        txt_mac = (TextView) v.findViewById(R.id.txt_mac);
+        txt_name = v.findViewById(R.id.txt_name);
+        txt_mac = v.findViewById(R.id.txt_mac);
 
         mResultAdapter = new ResultAdapter(getActivity());
-        ListView listView_device = (ListView) v.findViewById(R.id.list_service);
+        ListView listView_device = v.findViewById(R.id.list_service);
         listView_device.setAdapter(mResultAdapter);
         listView_device.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -113,9 +113,9 @@ public class ServiceListFragment extends Fragment {
                 convertView = View.inflate(context, R.layout.adapter_service, null);
                 holder = new ViewHolder();
                 convertView.setTag(holder);
-                holder.txt_title = (TextView) convertView.findViewById(R.id.txt_title);
-                holder.txt_uuid = (TextView) convertView.findViewById(R.id.txt_uuid);
-                holder.txt_type = (TextView) convertView.findViewById(R.id.txt_type);
+                holder.txt_title = convertView.findViewById(R.id.txt_title);
+                holder.txt_uuid = convertView.findViewById(R.id.txt_uuid);
+                holder.txt_type = convertView.findViewById(R.id.txt_type);
             }
 
             BluetoothGattService service = bluetoothGattServices.get(position);

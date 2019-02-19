@@ -60,7 +60,7 @@ public class BleMsg {
     // read Descriptor
     public static final int MSG_DESC_READ_START = 0x71;
     public static final int MSG_DESC_READ_RESULT = 0x72;
-    public static final String KEY_READ_DESC_BUNDLE_STATUS = "read_status";
-    public static final String KEY_READ_DESC_BUNDLE_VALUE = "read_value";
+    public static final String KEY_READ_DESC_BUNDLE_STATUS = "read_descriptor_status";
+    public static final String KEY_READ_DESC_BUNDLE_VALUE = "read_descriptor_value";
 
 }

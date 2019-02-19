@@ -6,6 +6,7 @@ import android.os.Build;
 
 import com.clj.fastble.BleManager;
 import com.clj.fastble.data.BleDevice;
+import com.clj.fastble.data.BleQueue;
 import com.clj.fastble.utils.BleLruHashMap;
 
 import java.util.ArrayList;
@@ -37,9 +38,7 @@ public class MultipleBluetoothController {
         if (bleBluetooth == null) {
             return;
         }
-        if (bleTempHashMap.containsKey(bleBluetooth.getDeviceKey())) {
-            bleTempHashMap.remove(bleBluetooth.getDeviceKey());
-        }
+      bleTempHashMap.remove(bleBluetooth.getDeviceKey());
     }
 
     public synchronized void addBleBluetooth(BleBluetooth bleBluetooth) {
@@ -55,9 +54,7 @@ public class MultipleBluetoothController {
         if (bleBluetooth == null) {
             return;
         }
-        if (bleLruHashMap.containsKey(bleBluetooth.getDeviceKey())) {
-            bleLruHashMap.remove(bleBluetooth.getDeviceKey());
-        }
+      bleLruHashMap.remove(bleBluetooth.getDeviceKey());
     }
 
     public synchronized boolean isContainDevice(BleDevice bleDevice) {
@@ -134,6 +131,4 @@ public class MultipleBluetoothController {
             }
         }
     }
-
-
 }
