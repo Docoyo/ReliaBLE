@@ -1,8 +1,6 @@
 package com.clj.fastble.scan;
 
 
-import android.annotation.TargetApi;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 
@@ -17,7 +15,6 @@ import com.clj.fastble.utils.BleLog;
 import java.util.List;
 import java.util.UUID;
 
-@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 public class BleScanner {
 
     public static BleScanner getInstance() {

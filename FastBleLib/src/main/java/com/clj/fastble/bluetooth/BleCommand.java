@@ -1,32 +1,44 @@
 package com.clj.fastble.bluetooth;
 
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import com.clj.fastble.callback.BleBaseCallback;
-import com.clj.fastble.data.BleQueue;
 
 public class BleCommand {
 
 
-  private final BleBaseCallback callback;
-  private final Type type;
+  private final byte[] value;
+  private BleBaseCallback callback;
+  private final BleCommandType bleCommandType;
   private final String serviceUuid;
   private final String characteristicsUuid;
   private final String descriptorUuid;
 
-  public BleCommand(Type type, String uuid_service, String uuid_characteristic,
-      String uuid_descriptor, BleBaseCallback callback) {
-    this.type = type;
-    this.serviceUuid = uuid_service;
-    this.characteristicsUuid = uuid_characteristic;
-    this.descriptorUuid = uuid_descriptor;
+  public BleCommand(BleCommandType bleCommandType, String uuidService, String uuidCharacteristic,
+      String uuidDescriptor, BleBaseCallback callback){
+    this(bleCommandType, uuidService, uuidCharacteristic, uuidDescriptor, callback, null);
+  }
+
+  public BleCommand(BleCommandType bleCommandType, String uuidService, String uuidCharacteristic,
+      String uuidDescriptor, BleBaseCallback callback, byte[] value) {
+    this.bleCommandType = bleCommandType;
+    this.serviceUuid = uuidService;
+    this.characteristicsUuid = uuidCharacteristic;
+    this.descriptorUuid = uuidDescriptor;
     this.callback = callback;
+    this.value = value;
   }
 
   public String getUuid() {
-    return type.name() + serviceUuid + characteristicsUuid + descriptorUuid;
+    return bleCommandType.name() + serviceUuid + characteristicsUuid + descriptorUuid;
   }
 
-  public Type getType() {
-    return type;
+  public String getUuidWithCallback() {
+    return bleCommandType.name() + serviceUuid + characteristicsUuid + descriptorUuid + String.valueOf(callback.hashCode());
+  }
+
+  public BleCommandType getBleCommandType() {
+    return bleCommandType;
   }
 
   public String getServiceUuid() {
@@ -45,12 +57,32 @@ public class BleCommand {
     return callback;
   }
 
-  public enum Type {
+  public void addCallback(BleBaseCallback bleCallback) {
+    this.callback = bleCallback;
+  }
+
+  public static BleCommand fromCharacteristic(BleCommandType bleCommandType, BluetoothGattCharacteristic characteristic){
+    return new BleCommand(bleCommandType, characteristic.getService().getUuid().toString(), characteristic.getUuid().toString(), null, null);
+  }
+
+  public static BleCommand fromDescriptor(BleCommandType bleCommandType, BluetoothGattDescriptor descriptor){
+    return new BleCommand(bleCommandType, descriptor.getCharacteristic().getService().getUuid().toString(), descriptor.getCharacteristic().getUuid().toString(), descriptor.getUuid().toString(), null);
+  }
+
+  public byte[] getValue() {
+    return value;
+  }
+
+  public enum BleCommandType {
     READ,
     READ_DESCRIPTOR,
     WRITE,
     NOTIFY,
-    INDICATE
+    NOTIFY_STOP,
+    INDICATE,
+    INDICATE_STOP,
+    READ_RSSI,
+    SET_MTU
   }
 
 }

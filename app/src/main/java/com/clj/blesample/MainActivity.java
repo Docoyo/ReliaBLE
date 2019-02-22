@@ -299,12 +299,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void readRssi(BleDevice bleDevice) {
         BleManager.getInstance().readRssi(bleDevice, new BleRssiCallback() {
             @Override
-            public void onRssiFailure(BleException exception) {
+            public void onFailure(BleException exception) {
                 Log.i(TAG, "onRssiFailure" + exception.toString());
             }
 
             @Override
-            public void onRssiSuccess(int rssi) {
+            public void onSuccess(int rssi) {
                 Log.i(TAG, "onRssiSuccess: " + rssi);
             }
         });
@@ -313,7 +313,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void setMtu(BleDevice bleDevice, int mtu) {
         BleManager.getInstance().setMtu(bleDevice, mtu, new BleMtuChangedCallback() {
             @Override
-            public void onSetMTUFailure(BleException exception) {
+            public void onFailure(BleException exception) {
                 Log.i(TAG, "onsetMTUFailure" + exception.toString());
             }
 

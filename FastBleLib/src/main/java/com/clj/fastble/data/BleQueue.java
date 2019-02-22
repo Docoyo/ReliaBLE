@@ -7,8 +7,11 @@ import com.clj.fastble.BleManager;
 import com.clj.fastble.bluetooth.BleBluetooth;
 import com.clj.fastble.bluetooth.BleCommand;
 
+import com.clj.fastble.callback.BleNotifyCallback;
 import com.clj.fastble.callback.BleReadCallback;
 import com.clj.fastble.callback.BleReadDescriptorCallback;
+import com.clj.fastble.callback.BleWriteCallback;
+import com.clj.fastble.exception.TimeoutException;
 import com.clj.fastble.utils.BleLog;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -45,25 +48,27 @@ public class BleQueue {
         BleCommand command = (BleCommand) msg.obj;
         switch (msg.what) {
           case Messages.MSG_ENQUEUE:
-            commandStore.put(command.getUuid(), command);
-            fifo.add(command.getUuid());
+            commandStore.put(command.getUuidWithCallback(), command);
+            fifo.add(command.getUuidWithCallback());
             if (currentCommand == null) {
               executeNextCommand();
             }
 
-            mHandler.sendMessageDelayed(mHandler.obtainMessage(Messages.MSG_TIMEOUT, command),
-                BleManager.getInstance().getOperateTimeout());
+//            mHandler.sendMessageDelayed(mHandler.obtainMessage(Messages.MSG_TIMEOUT, command),
+//                BleManager.getInstance().getOperateTimeout());
             break;
 
           case Messages.MSG_DEQUEUE:
-            commandStore.remove(command.getUuid());
+            commandStore.remove(command.getUuidWithCallback());
             executeNextCommand();
 
             break;
 
           case Messages.MSG_TIMEOUT:
-            commandStore.remove(command.getUuid());
-
+            commandStore.remove(command.getUuidWithCallback());
+            if (currentCommand.getUuidWithCallback() == command.getUuidWithCallback()) {
+              command.getCallback().onFailure(new TimeoutException());
+            }
 
           default:
         }
@@ -87,22 +92,56 @@ public class BleQueue {
       executeNextCommand();
       return;
     }
-
-    switch (currentCommand.getType()) {
-      case READ:
-        mBleBluetooth.newBleConnector()
+    boolean handled = false;
+    switch (currentCommand.getBleCommandType()) {
+      case WRITE:
+        handled = mBleBluetooth.newBleConnector()
             .withUUIDString(currentCommand.getServiceUuid(),
                 currentCommand.getCharacteristicsUuid())
-            .readCharacteristic((BleReadCallback) currentCommand.getCallback(),
-                currentCommand.getUuid());
+            .writeCharacteristic(currentCommand.getUuid(), currentCommand.getValue(),
+                (BleWriteCallback) currentCommand.getCallback()
+            );
+        break;
+
+      case READ:
+        handled = mBleBluetooth.newBleConnector()
+            .withUUIDString(currentCommand.getServiceUuid(),
+                currentCommand.getCharacteristicsUuid())
+            .readCharacteristic(currentCommand.getUuid(),
+                (BleReadCallback) currentCommand.getCallback()
+            );
         break;
       case READ_DESCRIPTOR:
-        mBleBluetooth.newBleConnector()
+        handled = mBleBluetooth.newBleConnector()
             .withUUIDString(currentCommand.getServiceUuid(),
                 currentCommand.getCharacteristicsUuid(), currentCommand.getDescriptorUuid())
-            .readDescriptor((BleReadDescriptorCallback) currentCommand.getCallback(),
-                currentCommand.getUuid());
+            .readDescriptor(currentCommand.getUuid(),
+                (BleReadDescriptorCallback) currentCommand.getCallback()
+            );
         break;
+
+      case NOTIFY:
+        handled = mBleBluetooth.newBleConnector()
+            .withUUIDString(currentCommand.getServiceUuid(),
+                currentCommand.getCharacteristicsUuid())
+            .enableCharacteristicNotify(currentCommand.getUuid(),
+                (BleNotifyCallback) currentCommand.getCallback());
+        break;
+      case NOTIFY_STOP:
+        handled = mBleBluetooth.newBleConnector()
+            .withUUIDString(currentCommand.getServiceUuid(),
+                currentCommand.getCharacteristicsUuid())
+            .disableCharacteristicNotify(currentCommand.getUuid(),
+                (BleNotifyCallback) currentCommand.getCallback());
+        break;
+
+      default:
+        BleLog.e("Command " + currentCommand.getBleCommandType().toString() + "Not yet supported");
+        handled = true;
+    }
+    if (handled) {
+      commandStore.remove(currentCommand.getUuid());
+      executeNextCommand();
     }
   }
 

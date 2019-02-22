@@ -33,7 +33,7 @@ If you want to quickly preview all the functions, you can download APK as a test
        <groupId>com.clj.fastble</groupId>
        <artifactId>FastBleLib</artifactId>
        <version>2.3.4</version>
-	   <type>pom</type>
+	   <bleCommandType>pom</bleCommandType>
 	</dependency>
 
 ### Gradle
@@ -248,7 +248,7 @@ If you want to quickly preview all the functions, you can download APK as a test
                 uuid_characteristic_notify,
                 new BleNotifyCallback() {
                     @Override
-                    public void onNotifySuccess() {
+                    public void onNotifyStart() {
 
                     }
 
@@ -294,12 +294,12 @@ If you want to quickly preview all the functions, you can download APK as a test
                 uuid_characteristic_indicate,
                 new BleIndicateCallback() {
                     @Override
-                    public void onIndicateSuccess() {
+                    public void onStart() {
 
                     }
 
                     @Override
-                    public void onIndicateFailure(BleException exception) {
+                    public void onFailure(BleException exception) {
 
                     }
 
@@ -356,7 +356,7 @@ If you want to quickly preview all the functions, you can download APK as a test
                     }
 
                     @Override
-                    public void onWriteFailure(BleException exception) {
+                    public void onFailure(BleException exception) {
 
                     }
                 });
@@ -378,12 +378,12 @@ If you want to quickly preview all the functions, you can download APK as a test
                 uuid_characteristic_read,
                 new BleReadCallback() {
                     @Override
-                    public void onReadSuccess(byte[] data) {
+                    public void onSuccess(byte[] data) {
 
                     }
 
                     @Override
-                    public void onReadFailure(BleException exception) {
+                    public void onFailure(BleException exception) {
 
                     }
                 });
@@ -420,7 +420,7 @@ If you want to quickly preview all the functions, you can download APK as a test
 
         BleManager.getInstance().setMtu(bleDevice, mtu, new BleMtuChangedCallback() {
             @Override
-            public void onSetMTUFailure(BleException exception) {
+            public void onFailure(BleException exception) {
 
             }
 

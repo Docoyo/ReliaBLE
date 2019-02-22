@@ -10,7 +10,6 @@ import com.clj.fastble.data.BleDevice;
 import com.clj.fastble.exception.BleException;
 
 
-@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 public abstract class BleGattCallback extends BluetoothGattCallback {
 
     public abstract void onStartConnect();

@@ -42,6 +42,9 @@ public class CharacteristicOperationFragment extends Fragment {
 
   private LinearLayout layout_container;
   private List<String> childList = new ArrayList<>();
+  private BleNotifyCallback notifyCallback;
+  private BleNotifyCallback notifyCallback2;
+  private BleIndicateCallback indicateCallback;
 
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -114,7 +117,7 @@ public class CharacteristicOperationFragment extends Fragment {
                               BluetoothGattDescriptor descriptorToRead = descriptor;
 
                               @Override
-                              public void onReadSuccess(byte[] data) {
+                              public void onSuccess(byte[] data) {
 
                                 String value = HexUtil.formatHexString(data);
                                 if (isPrintable(data)) {
@@ -129,7 +132,7 @@ public class CharacteristicOperationFragment extends Fragment {
                               }
 
                               @Override
-                              public void onReadFailure(BleException exception) {
+                              public void onFailure(BleException exception) {
                                 addText(txt, exception.toString());
                               }
                             });
@@ -151,7 +154,7 @@ public class CharacteristicOperationFragment extends Fragment {
                 }
 
                 @Override
-                public void onReadFailure(final BleException exception) {
+                public void onFailure(final BleException exception) {
                   runOnUiThread(() -> addText(txt, exception.toString()));
                 }
               }));
@@ -186,7 +189,7 @@ public class CharacteristicOperationFragment extends Fragment {
                   }
 
                   @Override
-                  public void onWriteFailure(final BleException exception) {
+                  public void onFailure(final BleException exception) {
                     runOnUiThread(() -> addText(txt, exception.toString()));
                   }
                 });
@@ -222,7 +225,7 @@ public class CharacteristicOperationFragment extends Fragment {
                   }
 
                   @Override
-                  public void onWriteFailure(final BleException exception) {
+                  public void onFailure(final BleException exception) {
                     runOnUiThread(() -> addText(txt, exception.toString()));
                   }
                 });
@@ -237,37 +240,89 @@ public class CharacteristicOperationFragment extends Fragment {
           final Button btn = view_add.findViewById(R.id.btn);
           btn.setText(getActivity().getString(R.string.open_notification));
           btn.setOnClickListener(view14 -> {
+//            notifyCallback = new BleNotifyCallback() {
+//
+//              @Override
+//              public void onNotifyStart() {
+//                addText(txt, "notify success");
+//              }
+//
+//              @Override
+//              public void onNotifyFailure(final BleException exception) {
+//                addText(txt, exception.toString());
+//              }
+//
+//              @Override
+//              public void onCharacteristicChanged(byte[] data) {
+//                addText(txt,
+//                    HexUtil.formatHexString(characteristic.getValue(), true));
+//              }
+//
+//              @Override
+//              public void onNotifyStop() {
+//                addText(txt, "notify stopped");
+//              }
+//            };
+            List<BluetoothGattCharacteristic> chars = characteristic.getService()
+                .getCharacteristics();
+            List<BleNotifyCallback> callbacks = new ArrayList<>();
+
             if (btn.getText().toString()
                 .equals(getActivity().getString(R.string.open_notification))) {
               btn.setText(getActivity().getString(R.string.close_notification));
-              BleManager.getInstance().notify(
-                  bleDevice,
-                  characteristic.getService().getUuid().toString(),
-                  characteristic.getUuid().toString(),
-                  new BleNotifyCallback() {
+//
+//              BleManager.getInstance().notify(
+//                  bleDevice,
+//                  characteristic.getService().getUuid().toString(),
+//                  characteristic.getUuid().toString(),
+//                  notifyCallback
+//              );
+//              BleManager.getInstance().notify(
+//                  bleDevice,
+//                  characteristic.getService().getUuid().toString(),
+//                  characteristic.getUuid().toString(),
+//                  notifyCallback2
+//              );
 
-                    @Override
-                    public void onNotifySuccess() {
-                      runOnUiThread(() -> addText(txt, "notify success"));
-                    }
+              for (BluetoothGattCharacteristic lchar : chars) {
+                BleNotifyCallback bleNotifyCallback = new BleNotifyCallback() {
 
-                    @Override
-                    public void onNotifyFailure(final BleException exception) {
-                      runOnUiThread(() -> addText(txt, exception.toString()));
-                    }
+                  @Override
+                  public void onStart() {
+                    addText(txt, "notify success");
+                  }
 
-                    @Override
-                    public void onCharacteristicChanged(byte[] data) {
-                      runOnUiThread(() -> addText(txt,
-                          HexUtil.formatHexString(characteristic.getValue(), true)));
-                    }
-                  });
+                  @Override
+                  public void onFailure(final BleException exception) {
+                    addText(txt, exception.toString());
+                  }
+
+                  @Override
+                  public void onCharacteristicChanged(byte[] data) {
+                    addText(txt,
+                        HexUtil.formatHexString(characteristic.getValue(), true));
+                  }
+
+                  @Override
+                  public void onStop() {
+                    addText(txt, "notify stopped");
+                  }
+                };
+                BleManager.getInstance().notify(
+                    bleDevice,
+                    lchar.getService().getUuid().toString(),
+                    lchar.getUuid().toString(),
+                    bleNotifyCallback
+                );
+              }
             } else {
               btn.setText(getActivity().getString(R.string.open_notification));
-              BleManager.getInstance().stopNotify(
-                  bleDevice,
-                  characteristic.getService().getUuid().toString(),
-                  characteristic.getUuid().toString());
+              for (int i = 0; i < chars.size(); i++) {
+                BleManager.getInstance().stopNotify(
+                    bleDevice,
+                    chars.get(i).getService().getUuid().toString(),
+                    chars.get(i).getUuid().toString(), callbacks.get(i));
+              }
             }
           });
           layout_add.addView(view_add);
@@ -283,34 +338,43 @@ public class CharacteristicOperationFragment extends Fragment {
             if (btn.getText().toString()
                 .equals(getActivity().getString(R.string.open_notification))) {
               btn.setText(getActivity().getString(R.string.close_notification));
+              indicateCallback = new BleIndicateCallback() {
+
+                @Override
+                public void onStart() {
+                  addText(txt, "indicate success");
+                }
+
+                @Override
+                public void onFailure(final BleException exception) {
+                  addText(txt, exception.toString());
+                }
+
+                @Override
+                public void onCharacteristicChanged(byte[] data) {
+                  addText(txt,
+                      HexUtil.formatHexString(characteristic.getValue(), true));
+                }
+
+                @Override
+                public void onStop() {
+                  addText(txt, "indicate stopped");
+                }
+              };
               BleManager.getInstance().indicate(
                   bleDevice,
                   characteristic.getService().getUuid().toString(),
                   characteristic.getUuid().toString(),
-                  new BleIndicateCallback() {
-
-                    @Override
-                    public void onIndicateSuccess() {
-                      runOnUiThread(() -> addText(txt, "indicate success"));
-                    }
-
-                    @Override
-                    public void onIndicateFailure(final BleException exception) {
-                      runOnUiThread(() -> addText(txt, exception.toString()));
-                    }
-
-                    @Override
-                    public void onCharacteristicChanged(byte[] data) {
-                      runOnUiThread(() -> addText(txt,
-                          HexUtil.formatHexString(characteristic.getValue(), true)));
-                    }
-                  });
+                  indicateCallback
+              );
             } else {
               btn.setText(getActivity().getString(R.string.open_notification));
               BleManager.getInstance().stopIndicate(
                   bleDevice,
                   characteristic.getService().getUuid().toString(),
-                  characteristic.getUuid().toString());
+                  characteristic.getUuid().toString(),
+                  indicateCallback
+              );
             }
           });
           layout_add.addView(view_add);

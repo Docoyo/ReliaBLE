@@ -3,6 +3,7 @@ package com.clj.fastble.callback;
 
 import android.os.Handler;
 import android.os.Looper;
+import com.clj.fastble.exception.BleException;
 
 public abstract class BleBaseCallback {
 
@@ -31,5 +32,6 @@ public abstract class BleBaseCallback {
     this.handler = handler;
   }
 
+  public abstract void onFailure(BleException exception);
 
 }

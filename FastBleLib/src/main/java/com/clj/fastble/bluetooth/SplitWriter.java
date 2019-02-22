@@ -87,7 +87,7 @@ public class SplitWriter {
         mBleBluetooth.newBleConnector()
                 .withUUIDString(mUuid_service, mUuid_write)
                 .writeCharacteristic(
-                        data,
+                    mUuid_write, data,
                         new BleWriteCallback() {
                             @Override
                             public void onWriteSuccess(int current, int total, byte[] justWrite) {
@@ -102,17 +102,17 @@ public class SplitWriter {
                             }
 
                             @Override
-                            public void onWriteFailure(BleException exception) {
+                            public void onFailure(BleException exception) {
                                 if (mCallback != null) {
-                                    mCallback.onWriteFailure(new OtherException("exception occur while writing: " + exception.getDescription()));
+                                    mCallback.onFailure(new OtherException("exception occur while writing: " + exception.getDescription()));
                                 }
                                 if (mSendNextWhenLastSuccess) {
                                     Message message = mHandler.obtainMessage(BleMsg.MSG_SPLIT_WRITE_NEXT);
                                     mHandler.sendMessageDelayed(message, mIntervalBetweenTwoPackage);
                                 }
                             }
-                        },
-                        mUuid_write);
+                        }
+                );
 
         if (!mSendNextWhenLastSuccess) {
             Message message = mHandler.obtainMessage(BleMsg.MSG_SPLIT_WRITE_NEXT);

@@ -18,7 +18,7 @@ Android Bluetooth Low Energy 蓝牙快速开发框架。
        <groupId>com.clj.fastble</groupId>
        <artifactId>FastBleLib</artifactId>
        <version>1.2.1</version>
-	   <type>pom</type>
+	   <bleCommandType>pom</bleCommandType>
 	</dependency>
 
 or Gradle:
