@@ -105,6 +105,14 @@ public class BleBluetooth {
   }
 
   public void enqueueCommand(BleCommandType bleCommandType, String uuidService,
+      String uuidCharacteristic, String uuidDescriptor, BleBaseCallback callback, int value) {
+    Message message = bleQueue.getHandler().obtainMessage(BleQueue.Messages.MSG_ENQUEUE,
+        new BleCommand(bleCommandType, uuidService, uuidCharacteristic,
+            uuidDescriptor, callback, value));
+    message.sendToTarget();
+  }
+
+  public void enqueueCommand(BleCommandType bleCommandType, String uuidService,
       String uuidCharacteristic, String uuidDescriptor, BleBaseCallback callback) {
     enqueueCommand(bleCommandType, uuidService, uuidCharacteristic,
         uuidDescriptor, callback, null);

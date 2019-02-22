@@ -9,6 +9,7 @@ public class BleCommand {
 
 
   private final byte[] value;
+  private final int valueInt;
   private BleBaseCallback callback;
   private final BleCommandType bleCommandType;
   private final String serviceUuid;
@@ -29,6 +30,18 @@ public class BleCommand {
     this.descriptorUuid = uuidDescriptor;
     this.callback = callback;
     this.value = value;
+    this.valueInt = 0;
+  }
+
+  public BleCommand(BleCommandType bleCommandType, String uuidService, String uuidCharacteristic,
+      String uuidDescriptor, BleBaseCallback callback, int value) {
+    this.bleCommandType = bleCommandType;
+    this.serviceUuid = uuidService;
+    this.characteristicsUuid = uuidCharacteristic;
+    this.descriptorUuid = uuidDescriptor;
+    this.callback = callback;
+    this.valueInt = value;
+    this.value = null;
   }
 
   public String getUuid() {
@@ -75,6 +88,10 @@ public class BleCommand {
     return value;
   }
 
+  public int getValueInt() {
+    return valueInt;
+  }
+
   public void setHandler(Handler handler){
    this.handler = handler;
   }
@@ -92,7 +109,7 @@ public class BleCommand {
     INDICATE,
     INDICATE_STOP,
     READ_RSSI,
-    SET_MTU;
+    SET_MTU
   }
 
 }

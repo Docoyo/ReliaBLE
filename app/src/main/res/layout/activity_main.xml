@@ -100,7 +100,8 @@
             android:layout_centerVertical="true"
             android:layout_marginRight="10dp"
             android:src="@mipmap/ic_loading"
-            android:visibility="invisible" />
+            android:visibility="invisible"
+          android:contentDescription="TODO"/>
 
     </RelativeLayout>
 

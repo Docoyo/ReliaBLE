@@ -611,7 +611,7 @@ public class BleManager {
     } else {
             bleBluetooth
           .enqueueCommand(BleCommandType.SET_MTU, BleCommandType.SET_MTU.name(), null, null,
-              callback);
+              callback, mtu);
     }
   }
 

@@ -13,7 +13,8 @@
             android:layout_width="30dp"
             android:layout_height="30dp"
             android:layout_centerVertical="true"
-            android:src="@mipmap/ic_blue_remote" />
+            android:src="@mipmap/ic_blue_remote"
+          android:contentDescription="TODO"/>
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -58,7 +59,8 @@
                 android:layout_width="18dp"
                 android:layout_height="18dp"
                 android:layout_marginLeft="5dp"
-                android:src="@mipmap/ic_rssi" />
+                android:src="@mipmap/ic_rssi"
+              android:contentDescription="TODO"/>
 
             <Button
                 android:id="@+id/btn_connect"
