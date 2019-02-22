@@ -1,14 +1,12 @@
 package com.clj.fastble.callback;
 
 
-import android.os.Handler;
 import android.os.Looper;
 import com.clj.fastble.exception.BleException;
 
 public abstract class BleBaseCallback {
 
   private String key;
-  private Handler handler;
 
   public boolean isRunOnUiThread() {
     return runOnUiThread;
@@ -22,14 +20,6 @@ public abstract class BleBaseCallback {
 
   public void setKey(String key) {
     this.key = key;
-  }
-
-  public Handler getHandler() {
-    return handler;
-  }
-
-  public void setHandler(Handler handler) {
-    this.handler = handler;
   }
 
   public abstract void onFailure(BleException exception);

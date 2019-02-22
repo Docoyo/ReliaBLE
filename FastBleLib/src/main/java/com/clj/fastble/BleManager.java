@@ -20,9 +20,8 @@ import com.clj.fastble.bluetooth.BleBluetooth;
 import com.clj.fastble.bluetooth.BleCommand.BleCommandType;
 import com.clj.fastble.bluetooth.MultipleBluetoothController;
 import com.clj.fastble.callback.BleGattCallback;
-import com.clj.fastble.callback.BleIndicateCallback;
+import com.clj.fastble.callback.BleNotifyOrIndicateCallback;
 import com.clj.fastble.callback.BleMtuChangedCallback;
-import com.clj.fastble.callback.BleNotifyCallback;
 import com.clj.fastble.callback.BleReadCallback;
 import com.clj.fastble.callback.BleReadDescriptorCallback;
 import com.clj.fastble.callback.BleRssiCallback;
@@ -390,7 +389,7 @@ public class BleManager {
   public void notify(BleDevice bleDevice,
       String uuid_service,
       String uuid_characteristic,
-      BleNotifyCallback callback) {
+      BleNotifyOrIndicateCallback callback) {
     if (callback == null) {
       throw new IllegalArgumentException("BleNotifyCallback can not be Null!");
     }
@@ -410,9 +409,9 @@ public class BleManager {
   public void indicate(BleDevice bleDevice,
       String uuidService,
       String uuidCharacteristic,
-      BleIndicateCallback callback) {
+      BleNotifyOrIndicateCallback callback) {
     if (callback == null) {
-      throw new IllegalArgumentException("BleIndicateCallback can not be Null!");
+      throw new IllegalArgumentException("BleNotifyOrIndicateCallback can not be Null!");
     }
 
     BleBluetooth bleBluetooth = multipleBluetoothController.getBleBluetooth(bleDevice);
@@ -430,7 +429,7 @@ public class BleManager {
   public void stopNotify(BleDevice bleDevice,
       String uuid_service,
       String uuid_characteristic,
-      BleNotifyCallback callback
+      BleNotifyOrIndicateCallback callback
   ) {
     BleBluetooth bleBluetooth = multipleBluetoothController.getBleBluetooth(bleDevice);
     if (bleBluetooth == null) {
@@ -448,7 +447,7 @@ public class BleManager {
   public void stopIndicate(BleDevice bleDevice,
       String uuidService,
       String uuidCharacteristic,
-      BleIndicateCallback callback) {
+      BleNotifyOrIndicateCallback callback) {
 
     BleBluetooth bleBluetooth = multipleBluetoothController.getBleBluetooth(bleDevice);
     if (bleBluetooth == null) {
@@ -472,7 +471,10 @@ public class BleManager {
      BleBluetooth bleBluetooth = multipleBluetoothController.getBleBluetooth(bleDevice);
     if (bleBluetooth == null) {
       callback.onFailure(new OtherException("This device not connect!"));
-    } else {
+    } else if(data == null || data.length <= 0){
+      callback.onFailure(new OtherException("the data to be written is empty"));
+    }
+    else {
       bleBluetooth
           .enqueueCommand(BleCommandType.WRITE, uuidService, uuidCharacteristic, null, callback, data);
     }

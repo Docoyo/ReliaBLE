@@ -2,6 +2,7 @@ package com.clj.fastble.bluetooth;
 
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
+import android.os.Handler;
 import com.clj.fastble.callback.BleBaseCallback;
 
 public class BleCommand {
@@ -13,6 +14,7 @@ public class BleCommand {
   private final String serviceUuid;
   private final String characteristicsUuid;
   private final String descriptorUuid;
+  private Handler handler;
 
   public BleCommand(BleCommandType bleCommandType, String uuidService, String uuidCharacteristic,
       String uuidDescriptor, BleBaseCallback callback){
@@ -73,6 +75,14 @@ public class BleCommand {
     return value;
   }
 
+  public void setHandler(Handler handler){
+   this.handler = handler;
+  }
+
+  public Handler getHandler(){
+   return this.handler;
+  }
+
   public enum BleCommandType {
     READ,
     READ_DESCRIPTOR,
@@ -82,7 +92,7 @@ public class BleCommand {
     INDICATE,
     INDICATE_STOP,
     READ_RSSI,
-    SET_MTU
+    SET_MTU;
   }
 
 }

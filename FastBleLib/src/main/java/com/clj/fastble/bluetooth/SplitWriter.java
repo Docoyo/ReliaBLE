@@ -78,46 +78,46 @@ public class SplitWriter {
     }
 
     private void write() {
-        if (mDataQueue.peek() == null) {
-            release();
-            return;
-        }
-
-        byte[] data = mDataQueue.poll();
-        mBleBluetooth.newBleConnector()
-                .withUUIDString(mUuid_service, mUuid_write)
-                .writeCharacteristic(
-                    mUuid_write, data,
-                        new BleWriteCallback() {
-                            @Override
-                            public void onWriteSuccess(int current, int total, byte[] justWrite) {
-                                int position = mTotalNum - mDataQueue.size();
-                                if (mCallback != null) {
-                                    mCallback.onWriteSuccess(position, mTotalNum, justWrite);
-                                }
-                                if (mSendNextWhenLastSuccess) {
-                                    Message message = mHandler.obtainMessage(BleMsg.MSG_SPLIT_WRITE_NEXT);
-                                    mHandler.sendMessageDelayed(message, mIntervalBetweenTwoPackage);
-                                }
-                            }
-
-                            @Override
-                            public void onFailure(BleException exception) {
-                                if (mCallback != null) {
-                                    mCallback.onFailure(new OtherException("exception occur while writing: " + exception.getDescription()));
-                                }
-                                if (mSendNextWhenLastSuccess) {
-                                    Message message = mHandler.obtainMessage(BleMsg.MSG_SPLIT_WRITE_NEXT);
-                                    mHandler.sendMessageDelayed(message, mIntervalBetweenTwoPackage);
-                                }
-                            }
-                        }
-                );
-
-        if (!mSendNextWhenLastSuccess) {
-            Message message = mHandler.obtainMessage(BleMsg.MSG_SPLIT_WRITE_NEXT);
-            mHandler.sendMessageDelayed(message, mIntervalBetweenTwoPackage);
-        }
+//        if (mDataQueue.peek() == null) {
+//            release();
+//            return;
+//        }
+//
+//        byte[] data = mDataQueue.poll();
+//        mBleBluetooth.newBleConnector()
+//                .withUUIDString(mUuid_service, mUuid_write)
+//                .writeCharacteristic(
+//                    mUuid_write, data,
+//                        new BleWriteCallback() {
+//                            @Override
+//                            public void onWriteSuccess(int current, int total, byte[] justWrite) {
+//                                int position = mTotalNum - mDataQueue.size();
+//                                if (mCallback != null) {
+//                                    mCallback.onWriteSuccess(position, mTotalNum, justWrite);
+//                                }
+//                                if (mSendNextWhenLastSuccess) {
+//                                    Message message = mHandler.obtainMessage(BleMsg.MSG_SPLIT_WRITE_NEXT);
+//                                    mHandler.sendMessageDelayed(message, mIntervalBetweenTwoPackage);
+//                                }
+//                            }
+//
+//                            @Override
+//                            public void onFailure(BleException exception) {
+//                                if (mCallback != null) {
+//                                    mCallback.onFailure(new OtherException("exception occur while writing: " + exception.getDescription()));
+//                                }
+//                                if (mSendNextWhenLastSuccess) {
+//                                    Message message = mHandler.obtainMessage(BleMsg.MSG_SPLIT_WRITE_NEXT);
+//                                    mHandler.sendMessageDelayed(message, mIntervalBetweenTwoPackage);
+//                                }
+//                            }
+//                        }
+//                );
+//
+//        if (!mSendNextWhenLastSuccess) {
+//            Message message = mHandler.obtainMessage(BleMsg.MSG_SPLIT_WRITE_NEXT);
+//            mHandler.sendMessageDelayed(message, mIntervalBetweenTwoPackage);
+//        }
     }
 
     private void release() {

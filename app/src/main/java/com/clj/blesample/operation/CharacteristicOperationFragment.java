@@ -19,8 +19,7 @@ import android.widget.TextView;
 
 import com.clj.blesample.R;
 import com.clj.fastble.BleManager;
-import com.clj.fastble.callback.BleIndicateCallback;
-import com.clj.fastble.callback.BleNotifyCallback;
+import com.clj.fastble.callback.BleNotifyOrIndicateCallback;
 import com.clj.fastble.callback.BleReadCallback;
 import com.clj.fastble.callback.BleReadDescriptorCallback;
 import com.clj.fastble.callback.BleWriteCallback;
@@ -42,9 +41,9 @@ public class CharacteristicOperationFragment extends Fragment {
 
   private LinearLayout layout_container;
   private List<String> childList = new ArrayList<>();
-  private BleNotifyCallback notifyCallback;
-  private BleNotifyCallback notifyCallback2;
-  private BleIndicateCallback indicateCallback;
+  private BleNotifyOrIndicateCallback notifyCallback;
+  private BleNotifyOrIndicateCallback notifyCallback2;
+  private BleNotifyOrIndicateCallback indicateCallback;
 
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -149,7 +148,7 @@ public class CharacteristicOperationFragment extends Fragment {
               new BleReadCallback() {
 
                 @Override
-                public void onReadSuccess(final byte[] data) {
+                public void onSuccess(final byte[] data) {
                   addText(txt, HexUtil.formatHexString(data, true));
                 }
 
@@ -265,7 +264,7 @@ public class CharacteristicOperationFragment extends Fragment {
 //            };
             List<BluetoothGattCharacteristic> chars = characteristic.getService()
                 .getCharacteristics();
-            List<BleNotifyCallback> callbacks = new ArrayList<>();
+            List<BleNotifyOrIndicateCallback> callbacks = new ArrayList<>();
 
             if (btn.getText().toString()
                 .equals(getActivity().getString(R.string.open_notification))) {
@@ -285,7 +284,7 @@ public class CharacteristicOperationFragment extends Fragment {
 //              );
 
               for (BluetoothGattCharacteristic lchar : chars) {
-                BleNotifyCallback bleNotifyCallback = new BleNotifyCallback() {
+                BleNotifyOrIndicateCallback bleNotifyCallback = new BleNotifyOrIndicateCallback() {
 
                   @Override
                   public void onStart() {
@@ -308,11 +307,14 @@ public class CharacteristicOperationFragment extends Fragment {
                     addText(txt, "notify stopped");
                   }
                 };
-                BleManager.getInstance().notify(
-                    bleDevice,
-                    lchar.getService().getUuid().toString(),
-                    lchar.getUuid().toString(),
-                    bleNotifyCallback
+                callbacks.add(bleNotifyCallback);
+                runOnUiThread(() ->
+                    BleManager.getInstance().notify(
+                        bleDevice,
+                        lchar.getService().getUuid().toString(),
+                        lchar.getUuid().toString(),
+                        bleNotifyCallback
+                    )
                 );
               }
             } else {
@@ -338,7 +340,7 @@ public class CharacteristicOperationFragment extends Fragment {
             if (btn.getText().toString()
                 .equals(getActivity().getString(R.string.open_notification))) {
               btn.setText(getActivity().getString(R.string.close_notification));
-              indicateCallback = new BleIndicateCallback() {
+              indicateCallback = new BleNotifyOrIndicateCallback() {
 
                 @Override
                 public void onStart() {

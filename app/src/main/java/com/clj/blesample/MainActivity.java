@@ -278,8 +278,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 mDeviceAdapter.notifyDataSetChanged();
             }
 
+
             @Override
-            public void onDisConnected(boolean isActiveDisConnected, BleDevice bleDevice, BluetoothGatt gatt, int status) {
+            public void onDisconnected(boolean isActiveDisConnected, BleDevice bleDevice, BluetoothGatt gatt, int status) {
                 progressDialog.dismiss();
 
                 mDeviceAdapter.removeDevice(bleDevice);
@@ -318,8 +319,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
 
             @Override
-            public void onMtuChanged(int mtu) {
-                Log.i(TAG, "onMtuChanged: " + mtu);
+            public void onSuccess(int mtu) {
+                Log.i(TAG, "onSuccess: " + mtu);
             }
         });
     }

@@ -425,7 +425,7 @@ If you want to quickly preview all the functions, you can download APK as a test
             }
 
             @Override
-            public void onMtuChanged(int mtu) {
+            public void onSuccess(int mtu) {
 
             }
         });
@@ -434,7 +434,7 @@ If you want to quickly preview all the functions, you can download APK as a test
 	- Setting up MTU requires operation after the device is connected.
 	- There is no such restriction in the Android Version (API-17 to API-20). Therefore, only the equipment above API21 will expand the demand for MTU.
 	- The parameter MTU of the method is set to 23, and the maximum setting is 512.
-	- Not every device supports the expansion of MTU, which requires both sides of the communication, that is to say, the need for the device hardware also supports the expansion of the MTU method. After calling this method, you can see through onMtuChanged (int MTU) how much the maximum transmission unit of the device is expanded to after the final setup. If the device does not support, no matter how many settings, the final MTU will be 23.
+	- Not every device supports the expansion of MTU, which requires both sides of the communication, that is to say, the need for the device hardware also supports the expansion of the MTU method. After calling this method, you can see through onSuccess (int MTU) how much the maximum transmission unit of the device is expanded to after the final setup. If the device does not support, no matter how many settings, the final MTU will be 23.
 
 - #### requestConnectionPriority
 

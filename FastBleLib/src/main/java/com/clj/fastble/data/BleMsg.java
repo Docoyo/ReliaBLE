@@ -7,6 +7,8 @@ public class BleMsg {
     // common
     public static final String KEY_BLE_BUNDLE_STATUS = "ble_status";
     public static final String KEY_BLE_BUNDLE_VALUE = "ble_value";
+    public static final int MSG_START = 0x01;
+    public static final int MSG_STOP = 0x02;
 
     // Scan
     public static final int MSG_SCAN_DEVICE = 0X00;
@@ -20,7 +22,7 @@ public class BleMsg {
     public static final int MSG_DISCOVER_SUCCESS = 0x06;
     public static final int MSG_CONNECT_OVER_TIME = 0x07;
 
-    // Notify
+    // Notify and Indicate
     public static final int MSG_CHA_NOTIFY_START = 0x11;
     public static final int MSG_CHA_NOTIFY_STOP= 0x12;
     public static final int MSG_CHA_NOTIFY_DATA_CHANGE = 0x13;

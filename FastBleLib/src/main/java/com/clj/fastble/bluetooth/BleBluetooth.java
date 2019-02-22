@@ -35,7 +35,7 @@ import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
 
 public class BleBluetooth {
 
-  private HashMap<String, List<BleBaseCallback>> bleCallbackHashMap = new HashMap<>();
+  private HashMap<String, List<BleCommand>> bleCommandHashMap = new HashMap<>();
 
   private LastState lastState;
   private boolean isActiveDisconnect = false;
@@ -58,28 +58,28 @@ public class BleBluetooth {
   /**
    * Adds a callback to the callback list and retuns the length of the list for the respective uuid
    */
-  synchronized int addCallback(String uuid, BleBaseCallback callback) {
-    List<BleBaseCallback> callbacks = bleCallbackHashMap.get(uuid);
-    if (callbacks == null) {
-      callbacks = new ArrayList<>();
+  synchronized int addCommand(BleCommand command) {
+    List<BleCommand> commands = bleCommandHashMap.get(command.getUuid());
+    if (commands == null) {
+      commands = new ArrayList<>();
     }
-    callbacks.add(callback);
-    bleCallbackHashMap.put(uuid, callbacks);
-    return callbacks.size();
+    commands.add(command);
+    bleCommandHashMap.put(command.getUuid(), commands);
+    return commands.size();
   }
 
-  synchronized int removeCallback(String uuid, BleBaseCallback callback) {
-    List<BleBaseCallback> callbacks = bleCallbackHashMap.get(uuid);
-    if (callbacks != null) {
-      callbacks.remove(callback);
-      if (callbacks.isEmpty()) {
-        bleCallbackHashMap.remove(uuid);
+  synchronized int removeCommand(BleCommand command) {
+    List<BleCommand> commands = bleCommandHashMap.get(command.getUuid());
+    if (commands != null) {
+      commands.remove(command);
+      if (commands.isEmpty()) {
+        bleCommandHashMap.remove(command.getUuid());
       } else {
-        bleCallbackHashMap.put(uuid, callbacks);
+        bleCommandHashMap.put(command.getUuid(), commands);
       }
-      return callbacks.size();
+      return commands.size();
     } else {
-      bleCallbackHashMap.remove(uuid);
+      bleCommandHashMap.remove(command.getUuid());
       return 0;
     }
   }
@@ -175,7 +175,7 @@ public class BleBluetooth {
     refreshDeviceCache();
     closeBluetoothGatt();
     bleConnectGattCallback = null;
-    bleCallbackHashMap.clear();
+    bleCommandHashMap.clear();
     mainHandler.removeCallbacksAndMessages(null);
   }
 
@@ -236,8 +236,9 @@ public class BleBluetooth {
             BleConnectStateParameter para = (BleConnectStateParameter) msg.obj;
             int status = para.getStatus();
             if (bleConnectGattCallback != null) {
-              bleConnectGattCallback
-                  .onConnectFail(bleDevice, new ConnectException(bluetoothGatt, status));
+              BleManager.getInstance().runBleCallbackMethodInContext(() -> bleConnectGattCallback
+                      .onConnectFail(bleDevice, new ConnectException(bluetoothGatt, status)),
+                  bleConnectGattCallback.isRunOnUiThread());
             }
           }
         }
@@ -257,7 +258,9 @@ public class BleBluetooth {
           boolean isActive = para.isActive();
           int status = para.getStatus();
           if (bleConnectGattCallback != null) {
-            bleConnectGattCallback.onDisConnected(isActive, bleDevice, bluetoothGatt, status);
+            BleManager.getInstance().runBleCallbackMethodInContext(() -> bleConnectGattCallback
+                    .onDisconnected(isActive, bleDevice, bluetoothGatt, status),
+                bleConnectGattCallback.isRunOnUiThread());
           }
         }
         break;
@@ -277,7 +280,9 @@ public class BleBluetooth {
               .removeConnectingBle(BleBluetooth.this);
 
           if (bleConnectGattCallback != null) {
-            bleConnectGattCallback.onConnectFail(bleDevice, new TimeoutException());
+            BleManager.getInstance().runBleCallbackMethodInContext(
+                () -> bleConnectGattCallback.onConnectFail(bleDevice, new TimeoutException()),
+                bleConnectGattCallback.isRunOnUiThread());
           }
         }
         break;
@@ -308,8 +313,10 @@ public class BleBluetooth {
               .removeConnectingBle(BleBluetooth.this);
 
           if (bleConnectGattCallback != null) {
-            bleConnectGattCallback.onConnectFail(bleDevice,
-                new OtherException("GATT discover services exception occurred!"));
+            BleManager.getInstance()
+                .runBleCallbackMethodInContext(() -> bleConnectGattCallback.onConnectFail(bleDevice,
+                    new OtherException("GATT discover services exception occurred!")),
+                    bleConnectGattCallback.isRunOnUiThread());
           }
         }
         break;
@@ -377,6 +384,84 @@ public class BleBluetooth {
       }
     }
 
+    private void handleBleResponseCharacteristic(BleCommandType type, int messageId,
+        BluetoothGattCharacteristic characteristic, int status, boolean removeCallback, boolean dequeue) {
+      BleCommand command = BleCommand.fromCharacteristic(type, characteristic);
+      List<BleCommand> bleCommands = bleCommandHashMap.get(command.getUuid());
+
+      if (bleCommands != null && !bleCommands.isEmpty()) {
+        Handler handler = bleCommands.get(0).getHandler();
+        if (handler != null) {
+          Message message = handler.obtainMessage();
+          message.what = messageId;
+          message.obj = bleCommands;
+          Bundle bundle = new Bundle();
+          bundle.putInt(BleMsg.KEY_BLE_BUNDLE_STATUS, status);
+          bundle.putByteArray(BleMsg.KEY_BLE_BUNDLE_VALUE, characteristic.getValue());
+          message.setData(bundle);
+          handler.sendMessage(message);
+        }
+
+        if (removeCallback) {
+          bleCommandHashMap.remove(bleCommands.get(0).getUuid());
+        }
+        if (dequeue){
+          bleQueue.getHandler().obtainMessage(Messages.MSG_DEQUEUE, bleCommands.get(0))
+              .sendToTarget();
+        }
+      }
+    }
+
+    private void handleBleResponseDescriptor(BleCommandType type, int messageId,
+        BluetoothGattDescriptor descriptor, int status, boolean removeCallback) {
+      BleCommand command = BleCommand.fromDescriptor(type, descriptor);
+      List<BleCommand> bleCommands = bleCommandHashMap.get(command.getUuid());
+
+      if (bleCommands != null && !bleCommands.isEmpty()) {
+        Handler handler = bleCommands.get(0).getHandler();
+        if (handler != null) {
+          Message message = handler.obtainMessage();
+          message.what = messageId;
+          message.obj = bleCommands;
+          Bundle bundle = new Bundle();
+          bundle.putInt(BleMsg.KEY_BLE_BUNDLE_STATUS, status);
+          bundle.putByteArray(BleMsg.KEY_BLE_BUNDLE_VALUE, descriptor.getValue());
+          message.setData(bundle);
+          handler.sendMessage(message);
+        }
+        if (removeCallback) {
+          bleCommandHashMap.remove(bleCommands.get(0).getUuid());
+          bleQueue.getHandler().obtainMessage(Messages.MSG_DEQUEUE, bleCommands.get(0))
+              .sendToTarget();
+        }
+      }
+    }
+
+    private void handleBleResponseInteger(BleCommandType type, int messageId,
+        int status, int value) {
+      BleCommand command = new BleCommand(type, type.name(),
+          null, null, null);
+      List<BleCommand> bleCommands = bleCommandHashMap.get(command.getUuid());
+
+      if (bleCommands != null && !bleCommands.isEmpty()) {
+        Handler handler = bleCommands.get(0).getHandler();
+        if (handler != null) {
+          Message message = handler.obtainMessage();
+          message.what = messageId;
+          message.obj = bleCommands;
+          Bundle bundle = new Bundle();
+          bundle.putInt(BleMsg.KEY_BLE_BUNDLE_STATUS, status);
+          bundle.putInt(BleMsg.KEY_BLE_BUNDLE_VALUE, value);
+          message.setData(bundle);
+          handler.sendMessage(message);
+        }
+
+        bleCommandHashMap.remove(bleCommands.get(0).getUuid());
+        bleQueue.getHandler().obtainMessage(Messages.MSG_DEQUEUE, bleCommands.get(0))
+            .sendToTarget();
+      }
+    }
+
     @Override
     public void onServicesDiscovered(BluetoothGatt gatt, int status) {
       super.onServicesDiscovered(gatt, status);
@@ -404,64 +489,31 @@ public class BleBluetooth {
         BluetoothGattCharacteristic characteristic) {
       super.onCharacteristicChanged(gatt, characteristic);
 
-      BleCommand commandNotify = BleCommand
-          .fromCharacteristic(BleCommandType.NOTIFY, characteristic);
-      List<BleBaseCallback> bleNotifyCallbacks = bleCallbackHashMap
-          .get(commandNotify.getUuid());
+      handleBleResponseCharacteristic(BleCommandType.NOTIFY, BleMsg.MSG_CHA_NOTIFY_DATA_CHANGE,
+          characteristic, 0, false, false);
 
-      if (bleNotifyCallbacks != null && !bleNotifyCallbacks.isEmpty()) {
-        commandNotify.addCallback(bleNotifyCallbacks.get(0));
-        Handler handler = bleNotifyCallbacks.get(0).getHandler();
-        if (handler != null) {
-          Message message = handler.obtainMessage();
-          message.what = BleMsg.MSG_CHA_NOTIFY_DATA_CHANGE;
-          message.obj = bleNotifyCallbacks;
-          Bundle bundle = new Bundle();
-          bundle.putByteArray(BleMsg.KEY_BLE_BUNDLE_VALUE, characteristic.getValue());
-          message.setData(bundle);
-          handler.sendMessage(message);
-        }
-      }
+      handleBleResponseCharacteristic(BleCommandType.INDICATE, BleMsg.MSG_CHA_INDICATE_DATA_CHANGE,
+          characteristic, 0, false, false);
 
-      BleCommand commandIndicate = BleCommand
-          .fromCharacteristic(BleCommandType.NOTIFY, characteristic);
-      List<BleBaseCallback> bleIndicateCallbacks = bleCallbackHashMap
-          .get(commandIndicate.getUuid());
-
-      if (bleNotifyCallbacks != null && !bleNotifyCallbacks.isEmpty()) {
-        commandNotify.addCallback(bleNotifyCallbacks.get(0));
-        Handler handler = bleNotifyCallbacks.get(0).getHandler();
-        if (handler != null) {
-          Message message = handler.obtainMessage();
-          message.what = BleMsg.MSG_CHA_INDICATE_DATA_CHANGE;
-          message.obj = bleIndicateCallbacks;
-          Bundle bundle = new Bundle();
-          bundle.putByteArray(BleMsg.KEY_BLE_BUNDLE_VALUE, characteristic.getValue());
-          message.setData(bundle);
-          handler.sendMessage(message);
-        }
-      }
     }
 
     @Override
     public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor,
         int status) {
       super.onDescriptorWrite(gatt, descriptor, status);
-      BleCommand command;
-      int what;
       byte[] value = descriptor.getValue();
       if (Arrays.equals(value, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)) {
-        command = BleCommand.fromDescriptor(BleCommandType.NOTIFY, descriptor);
-        what = BleMsg.MSG_CHA_NOTIFY_START;
+        handleBleResponseCharacteristic(BleCommandType.NOTIFY, BleMsg.MSG_CHA_NOTIFY_START,
+            descriptor.getCharacteristic(), status, false, true);
       } else if (Arrays.equals(value, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)) {
-        command = BleCommand.fromDescriptor(BleCommandType.NOTIFY_STOP, descriptor);
-        what = BleMsg.MSG_CHA_NOTIFY_STOP;
+        handleBleResponseCharacteristic(BleCommandType.NOTIFY_STOP, BleMsg.MSG_CHA_NOTIFY_STOP,
+            descriptor.getCharacteristic(), status, true, true);
       } else if (Arrays.equals(value, BluetoothGattDescriptor.ENABLE_INDICATION_VALUE)) {
-        command = BleCommand.fromDescriptor(BleCommandType.INDICATE, descriptor);
-        what = BleMsg.MSG_CHA_INDICATE_START;
+        handleBleResponseCharacteristic(BleCommandType.INDICATE, BleMsg.MSG_CHA_INDICATE_START,
+            descriptor.getCharacteristic(), status, false, true);
       } else if (Arrays.equals(value, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)) {
-        command = BleCommand.fromDescriptor(BleCommandType.INDICATE_STOP, descriptor);
-        what = BleMsg.MSG_CHA_INDICATE_STOP;
+        handleBleResponseCharacteristic(BleCommandType.INDICATE_STOP, BleMsg.MSG_CHA_INDICATE_STOP,
+            descriptor.getCharacteristic(), status, true, true);
       } else {
         BleLog
             .e("Could not determine what to do with the written descriptor " + descriptor.getUuid()
@@ -469,25 +521,6 @@ public class BleBluetooth {
                 .toString());
         return;
       }
-
-      List<BleBaseCallback> bleNotifyCallbacks = bleCallbackHashMap
-          .get(command.getUuid());
-      if (bleNotifyCallbacks != null && !bleNotifyCallbacks.isEmpty()) {
-        Handler handler = bleNotifyCallbacks.get(0).getHandler();
-        if (handler != null) {
-          Message message = handler.obtainMessage();
-          message.what = what;
-          message.obj = bleNotifyCallbacks;
-          Bundle bundle = new Bundle();
-          bundle.putInt(BleMsg.KEY_BLE_BUNDLE_STATUS, status);
-          message.setData(bundle);
-          handler.sendMessage(message);
-        }
-
-        command.addCallback(bleNotifyCallbacks.get(0));
-        bleQueue.getHandler().obtainMessage(Messages.MSG_DEQUEUE, command).sendToTarget();
-      }
-
     }
 
     @Override
@@ -495,24 +528,8 @@ public class BleBluetooth {
         BluetoothGattCharacteristic characteristic, int status) {
       super.onCharacteristicWrite(gatt, characteristic, status);
 
-      BleCommand command = BleCommand.fromCharacteristic(BleCommandType.WRITE, characteristic);
-      List<BleBaseCallback> bleCallbacks = bleCallbackHashMap.get(command.getUuid());
-
-      if (bleCallbacks != null && !bleCallbacks.isEmpty()) {
-        Handler handler = bleCallbacks.get(0).getHandler();
-        if (handler != null) {
-          Message message = handler.obtainMessage();
-          message.what = BleMsg.MSG_CHA_WRITE_RESULT;
-          message.obj = bleCallbacks;
-          Bundle bundle = new Bundle();
-          bundle.putInt(BleMsg.KEY_BLE_BUNDLE_STATUS, status);
-          bundle.putByteArray(BleMsg.KEY_BLE_BUNDLE_VALUE, characteristic.getValue());
-          message.setData(bundle);
-          handler.sendMessage(message);
-        }
-        command.addCallback(bleCallbacks.get(0));
-        bleQueue.getHandler().obtainMessage(Messages.MSG_DEQUEUE, command).sendToTarget();
-      }
+      handleBleResponseCharacteristic(BleCommandType.WRITE, BleMsg.MSG_CHA_WRITE_RESULT,
+          characteristic, status, true, true);
     }
 
     @Override
@@ -521,24 +538,8 @@ public class BleBluetooth {
         int status) {
       super.onCharacteristicRead(gatt, characteristic, status);
 
-      BleCommand command = BleCommand.fromCharacteristic(BleCommandType.READ, characteristic);
-      List<BleBaseCallback> bleCallbacks = bleCallbackHashMap.get(command.getUuid());
-
-      if (bleCallbacks != null && !bleCallbacks.isEmpty()) {
-        Handler handler = bleCallbacks.get(0).getHandler();
-        if (handler != null) {
-          Message message = handler.obtainMessage();
-          message.what = BleMsg.MSG_CHA_READ_RESULT;
-          message.obj = bleCallbacks;
-          Bundle bundle = new Bundle();
-          bundle.putInt(BleMsg.KEY_BLE_BUNDLE_STATUS, status);
-          bundle.putByteArray(BleMsg.KEY_BLE_BUNDLE_VALUE, characteristic.getValue());
-          message.setData(bundle);
-          handler.sendMessage(message);
-        }
-        command.addCallback(bleCallbacks.get(0));
-        bleQueue.getHandler().obtainMessage(Messages.MSG_DEQUEUE, command).sendToTarget();
-      }
+      handleBleResponseCharacteristic(BleCommandType.READ, BleMsg.MSG_CHA_READ_RESULT,
+          characteristic, status, true, true);
     }
 
     @Override
@@ -546,76 +547,26 @@ public class BleBluetooth {
         int status) {
       super.onDescriptorRead(gatt, descriptor, status);
 
-      BleCommand command = BleCommand.fromDescriptor(BleCommandType.READ_DESCRIPTOR, descriptor);
-      List<BleBaseCallback> bleCallbacks = bleCallbackHashMap.get(command.getUuid());
-
-      if (bleCallbacks != null && !bleCallbacks.isEmpty()) {
-        Handler handler = bleCallbacks.get(0).getHandler();
-        if (handler != null) {
-          Message message = handler.obtainMessage();
-          message.what = BleMsg.MSG_DESC_READ_RESULT;
-          message.obj = bleCallbacks;
-          Bundle bundle = new Bundle();
-          bundle.putInt(BleMsg.KEY_BLE_BUNDLE_STATUS, status);
-          bundle.putByteArray(BleMsg.KEY_BLE_BUNDLE_VALUE, descriptor.getValue());
-          message.setData(bundle);
-          handler.sendMessage(message);
-        }
-        command.addCallback(bleCallbacks.get(0));
-        bleQueue.getHandler().obtainMessage(Messages.MSG_DEQUEUE, command).sendToTarget();
-      }
+      handleBleResponseDescriptor(BleCommandType.READ_DESCRIPTOR, BleMsg.MSG_CHA_READ_RESULT,
+          descriptor, status, true);
     }
 
     @Override
     public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
       super.onReadRemoteRssi(gatt, rssi, status);
 
-      BleCommand command = new BleCommand(BleCommandType.READ_RSSI, BleCommandType.READ_RSSI.name(),
-          null, null, null);
-      List<BleBaseCallback> bleCallbacks = bleCallbackHashMap.get(command.getUuid());
-
-      if (bleCallbacks != null && !bleCallbacks.isEmpty()) {
-        Handler handler = bleCallbacks.get(0).getHandler();
-        if (handler != null) {
-          Message message = handler.obtainMessage();
-          message.what = BleMsg.MSG_READ_RSSI_RESULT;
-          message.obj = bleCallbacks;
-          Bundle bundle = new Bundle();
-          bundle.putInt(BleMsg.KEY_BLE_BUNDLE_STATUS, status);
-          bundle.putInt(BleMsg.KEY_BLE_BUNDLE_VALUE, rssi);
-          message.setData(bundle);
-          handler.sendMessage(message);
-        }
-        command.addCallback(bleCallbacks.get(0));
-        bleQueue.getHandler().obtainMessage(Messages.MSG_DEQUEUE, command).sendToTarget();
-      }
+      handleBleResponseInteger(BleCommandType.READ_RSSI, BleMsg.MSG_READ_RSSI_RESULT, status, rssi);
     }
 
     @Override
     public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
       super.onMtuChanged(gatt, mtu, status);
 
-      BleCommand command = new BleCommand(BleCommandType.READ_RSSI, BleCommandType.READ_RSSI.name(),
-          null, null, null);
-      List<BleBaseCallback> bleCallbacks = bleCallbackHashMap.get(command.getUuid());
+      handleBleResponseInteger(BleCommandType.SET_MTU, BleMsg.MSG_SET_MTU_RESULT, status, mtu);
 
-      if (bleCallbacks != null && !bleCallbacks.isEmpty()) {
-        Handler handler = bleCallbacks.get(0).getHandler();
-        if (handler != null) {
-          Message message = handler.obtainMessage();
-          message.what = BleMsg.MSG_SET_MTU_RESULT;
-          message.obj = bleCallbacks;
-          Bundle bundle = new Bundle();
-          bundle.putInt(BleMsg.KEY_BLE_BUNDLE_STATUS, status);
-          bundle.putInt(BleMsg.KEY_BLE_BUNDLE_VALUE, mtu);
-          message.setData(bundle);
-          handler.sendMessage(message);
-        }
-        command.addCallback(bleCallbacks.get(0));
-        bleQueue.getHandler().obtainMessage(Messages.MSG_DEQUEUE, command).sendToTarget();
-      }
     }
   };
+
 
   enum LastState {
     CONNECT_IDLE,

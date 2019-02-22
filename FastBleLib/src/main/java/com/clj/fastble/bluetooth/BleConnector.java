@@ -10,12 +10,12 @@ import android.os.Handler;
 import android.os.Message;
 
 import com.clj.fastble.BleManager;
-import com.clj.fastble.callback.BleIndicateCallback;
+import com.clj.fastble.callback.BleByteResultCallback;
+import com.clj.fastble.callback.BleIntResultCallback;
+import com.clj.fastble.callback.BleNotifyOrIndicateCallback;
 import com.clj.fastble.callback.BleMtuChangedCallback;
-import com.clj.fastble.callback.BleNotifyCallback;
 import com.clj.fastble.callback.BleReadCallback;
 import com.clj.fastble.callback.BleReadDescriptorCallback;
-import com.clj.fastble.callback.BleRssiCallback;
 import com.clj.fastble.callback.BleWriteCallback;
 import com.clj.fastble.data.BleMsg;
 import com.clj.fastble.data.BleWriteState;
@@ -28,6 +28,8 @@ import java.util.UUID;
 
 
 public class BleConnector {
+
+  private static final UUID UUID_CLIENT_CHARACTERISTIC_CONFIG_DESCRIPTOR = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
 
   private final BleManager mBleManager;
 
@@ -49,182 +51,67 @@ public class BleConnector {
         switch (msg.what) {
 
           case BleMsg.MSG_CHA_NOTIFY_START: {
-
-            List<BleNotifyCallback> notifyCallbacks = (List<BleNotifyCallback>) msg.obj;
-
-            if (notifyCallbacks != null) {
-              Bundle bundle = msg.getData();
-              int status = bundle.getInt(BleMsg.KEY_BLE_BUNDLE_STATUS);
-              for (BleNotifyCallback notifyCallback : notifyCallbacks) {
-                Runnable r;
-                if (status == BluetoothGatt.GATT_SUCCESS) {
-                  r = notifyCallback::onStart;
-                } else {
-                  r = () -> notifyCallback.onFailure(new GattException(status));
-                }
-                mBleManager.runBleCallbackMethodInContext(r,
-                    notifyCallback.isRunOnUiThread());
-              }
-            }
+            handleStartStop(msg);
             break;
           }
 
           case BleMsg.MSG_CHA_NOTIFY_STOP: {
-            List<BleNotifyCallback> notifyCallbacks = (List<BleNotifyCallback>) msg.obj;
-
-            if (notifyCallbacks != null) {
-              Bundle bundle = msg.getData();
-              int status = bundle.getInt(BleMsg.KEY_BLE_BUNDLE_STATUS);
-              for (BleNotifyCallback notifyCallback : notifyCallbacks) {
-                Runnable r;
-                if (status == BluetoothGatt.GATT_SUCCESS) {
-                  r = notifyCallback::onStop;
-                } else {
-                  r = () -> notifyCallback.onFailure(new GattException(status));
-                }
-                mBleManager.runBleCallbackMethodInContext(r,
-                    notifyCallback.isRunOnUiThread());
-              }
-            }
+            handleStartStop(msg);
             break;
           }
 
           case BleMsg.MSG_CHA_NOTIFY_DATA_CHANGE: {
-            List<BleNotifyCallback> notifyCallbacks = (List<BleNotifyCallback>) msg.obj;
-            Bundle bundle = msg.getData();
-            byte[] value = bundle.getByteArray(BleMsg.KEY_BLE_BUNDLE_VALUE);
-            if (notifyCallbacks != null) {
-              for (BleNotifyCallback notifyCallback : notifyCallbacks) {
-                mBleManager.runBleCallbackMethodInContext(
-                    () -> notifyCallback.onCharacteristicChanged(value),
-                    notifyCallback.isRunOnUiThread());
-              }
-            }
+            handleDataChange(msg);
             break;
           }
 
           case BleMsg.MSG_CHA_INDICATE_START: {
 
-            List<BleIndicateCallback> notifyCallbacks = (List<BleIndicateCallback>) msg.obj;
-
-            if (notifyCallbacks != null) {
-              Bundle bundle = msg.getData();
-              int status = bundle.getInt(BleMsg.KEY_BLE_BUNDLE_STATUS);
-              for (BleIndicateCallback bleIndicateCallback : notifyCallbacks) {
-                Runnable r;
-                if (status == BluetoothGatt.GATT_SUCCESS) {
-                  r = bleIndicateCallback::onStart;
-                } else {
-                  r = () -> bleIndicateCallback.onFailure(new GattException(status));
-                }
-                mBleManager.runBleCallbackMethodInContext(r,
-                    bleIndicateCallback.isRunOnUiThread());
-              }
-            }
+            handleStartStop(msg);
             break;
           }
 
           case BleMsg.MSG_CHA_INDICATE_STOP: {
-
-            List<BleIndicateCallback> notifyCallbacks = (List<BleIndicateCallback>) msg.obj;
-
-            if (notifyCallbacks != null) {
-              Bundle bundle = msg.getData();
-              int status = bundle.getInt(BleMsg.KEY_BLE_BUNDLE_STATUS);
-              for (BleIndicateCallback bleIndicateCallback : notifyCallbacks) {
-                Runnable r;
-                if (status == BluetoothGatt.GATT_SUCCESS) {
-                  r = bleIndicateCallback::onStop;
-                } else {
-                  r = () -> bleIndicateCallback.onFailure(new GattException(status));
-                }
-                mBleManager.runBleCallbackMethodInContext(r,
-                    bleIndicateCallback.isRunOnUiThread());
-              }
-            }
+            handleStartStop(msg);
             break;
           }
 
           case BleMsg.MSG_CHA_INDICATE_DATA_CHANGE: {
-            List<BleIndicateCallback> notifyCallbacks = (List<BleIndicateCallback>) msg.obj;
-            Bundle bundle = msg.getData();
-            byte[] value = bundle.getByteArray(BleMsg.KEY_BLE_BUNDLE_VALUE);
-            if (notifyCallbacks != null) {
-              for (BleIndicateCallback indicateCallback : notifyCallbacks) {
-                mBleManager.runBleCallbackMethodInContext(
-                    () -> indicateCallback.onCharacteristicChanged(value),
-                    indicateCallback.isRunOnUiThread());
-              }
-            }
+            handleDataChange(msg);
             break;
           }
 
           case BleMsg.MSG_CHA_WRITE_RESULT: {
-
-            BleWriteCallback writeCallback = (BleWriteCallback) msg.obj;
+            List<BleCommand> bleCommands = (List<BleCommand>) msg.obj;
             Bundle bundle = msg.getData();
             int status = bundle.getInt(BleMsg.KEY_BLE_BUNDLE_STATUS);
             byte[] value = bundle.getByteArray(BleMsg.KEY_BLE_BUNDLE_VALUE);
-            if (writeCallback != null) {
-              if (status == BluetoothGatt.GATT_SUCCESS) {
-                writeCallback.onWriteSuccess(BleWriteState.DATA_WRITE_SINGLE,
-                    BleWriteState.DATA_WRITE_SINGLE, value);
-              } else {
-                writeCallback.onFailure(new GattException(status));
+            if (bleCommands != null) {
+              for (BleCommand bleCommand : bleCommands) {
+                if (status == BluetoothGatt.GATT_SUCCESS) {
+                  ((BleWriteCallback) bleCommand.getCallback())
+                      .onWriteSuccess(BleWriteState.DATA_WRITE_SINGLE,
+                          BleWriteState.DATA_WRITE_SINGLE, value);
+                } else {
+                  bleCommand.getCallback().onFailure(new GattException(status));
+                }
               }
             }
             break;
           }
 
           case BleMsg.MSG_CHA_READ_RESULT: {
-            BleReadCallback readCallback = (BleReadCallback) msg.obj;
-            Bundle bundle = msg.getData();
-            int status = bundle.getInt(BleMsg.KEY_BLE_BUNDLE_STATUS);
-            byte[] value = bundle.getByteArray(BleMsg.KEY_BLE_BUNDLE_VALUE);
-            if (readCallback != null) {
-              if (status == BluetoothGatt.GATT_SUCCESS) {
-                mBleManager.runBleCallbackMethodInContext(
-                    () -> readCallback.onReadSuccess(value), readCallback.isRunOnUiThread());
-              } else {
-                mBleManager.runBleCallbackMethodInContext(
-                    () -> readCallback.onFailure(new GattException(status)),
-                    readCallback.isRunOnUiThread());
-              }
-            }
+            handleByteResult(msg);
             break;
           }
 
           case BleMsg.MSG_DESC_READ_RESULT: {
-            BleReadDescriptorCallback readDescriptorCallback = (BleReadDescriptorCallback) msg.obj;
-            Bundle bundle = msg.getData();
-            int status = bundle.getInt(BleMsg.KEY_BLE_BUNDLE_STATUS);
-            byte[] value = bundle.getByteArray(BleMsg.KEY_BLE_BUNDLE_VALUE);
-            if (readDescriptorCallback != null) {
-              if (status == BluetoothGatt.GATT_SUCCESS) {
-                mBleManager.runBleCallbackMethodInContext(
-                    () -> readDescriptorCallback.onSuccess(value),
-                    readDescriptorCallback.isRunOnUiThread());
-              } else {
-                mBleManager.runBleCallbackMethodInContext(
-                    () -> readDescriptorCallback.onFailure(new GattException(status)),
-                    readDescriptorCallback.isRunOnUiThread());
-              }
-            }
+            handleByteResult(msg);
             break;
           }
 
           case BleMsg.MSG_READ_RSSI_RESULT: {
-            BleRssiCallback rssiCallback = (BleRssiCallback) msg.obj;
-            Bundle bundle = msg.getData();
-            int status = bundle.getInt(BleMsg.KEY_BLE_BUNDLE_STATUS);
-            int value = bundle.getInt(BleMsg.KEY_BLE_BUNDLE_VALUE);
-            if (rssiCallback != null) {
-              if (status == BluetoothGatt.GATT_SUCCESS) {
-                rssiCallback.onSuccess(value);
-              } else {
-                rssiCallback.onFailure(new GattException(status));
-              }
-            }
+            handleIntResult(msg);
             break;
           }
 
@@ -237,18 +124,86 @@ public class BleConnector {
           }
 
           case BleMsg.MSG_SET_MTU_RESULT: {
-            BleMtuChangedCallback mtuChangedCallback = (BleMtuChangedCallback) msg.obj;
-            Bundle bundle = msg.getData();
-            int status = bundle.getInt(BleMsg.KEY_BLE_BUNDLE_STATUS);
-            int value = bundle.getInt(BleMsg.KEY_BLE_BUNDLE_VALUE);
-            if (mtuChangedCallback != null) {
-              if (status == BluetoothGatt.GATT_SUCCESS) {
-                mtuChangedCallback.onMtuChanged(value);
-              } else {
-                mtuChangedCallback.onFailure(new GattException(status));
-              }
-            }
+            handleIntResult(msg);
             break;
+          }
+        }
+      }
+
+      private void handleByteResult(Message msg) {
+        List<BleCommand> bleCommands = (List<BleCommand>) msg.obj;
+        Bundle bundle = msg.getData();
+        int status = bundle.getInt(BleMsg.KEY_BLE_BUNDLE_STATUS);
+        byte[] value = bundle.getByteArray(BleMsg.KEY_BLE_BUNDLE_VALUE);
+        if (bleCommands != null) {
+          for (BleCommand bleCommand : bleCommands) {
+            BleByteResultCallback callback = (BleByteResultCallback) bleCommand.getCallback();
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+              mBleManager.runBleCallbackMethodInContext(
+                  () -> callback.onSuccess(value), callback.isRunOnUiThread());
+            } else {
+              mBleManager.runBleCallbackMethodInContext(
+                  () -> callback.onFailure(new GattException(status)),
+                  callback.isRunOnUiThread());
+            }
+          }
+        }
+      }
+
+      private void handleIntResult(Message msg) {
+        List<BleCommand> bleCommands = (List<BleCommand>) msg.obj;
+        Bundle bundle = msg.getData();
+        int status = bundle.getInt(BleMsg.KEY_BLE_BUNDLE_STATUS);
+        int value = bundle.getInt(BleMsg.KEY_BLE_BUNDLE_VALUE);
+        if (bleCommands != null) {
+          for (BleCommand bleCommand : bleCommands) {
+            BleIntResultCallback callback = (BleIntResultCallback) bleCommand.getCallback();
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+              mBleManager.runBleCallbackMethodInContext(
+                  () -> callback.onSuccess(value), callback.isRunOnUiThread());
+            } else {
+              mBleManager.runBleCallbackMethodInContext(
+                  () -> callback.onFailure(new GattException(status)),
+                  callback.isRunOnUiThread());
+            }
+          }
+        }
+      }
+
+      private void handleDataChange(Message msg) {
+        List<BleCommand> bleCommands = (List<BleCommand>) msg.obj;
+        Bundle bundle = msg.getData();
+        byte[] value = bundle.getByteArray(BleMsg.KEY_BLE_BUNDLE_VALUE);
+        if (bleCommands != null) {
+          for (BleCommand command : bleCommands) {
+            BleNotifyOrIndicateCallback callback = (BleNotifyOrIndicateCallback) command
+                .getCallback();
+            mBleManager.runBleCallbackMethodInContext(
+                () -> callback.onCharacteristicChanged(value),
+                callback.isRunOnUiThread());
+          }
+        }
+      }
+
+      private void handleStartStop(Message msg) {
+        List<BleCommand> bleCommands = (List<BleCommand>) msg.obj;
+
+        if (bleCommands != null) {
+          Bundle bundle = msg.getData();
+          int status = bundle.getInt(BleMsg.KEY_BLE_BUNDLE_STATUS);
+          for (BleCommand bleCommand : bleCommands) {
+            Runnable r;
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+              if ((msg.what & BleMsg.MSG_START) > 0) {
+                r = () -> ((BleNotifyOrIndicateCallback) bleCommand.getCallback()).onStart();
+              } else {
+                r = () -> ((BleNotifyOrIndicateCallback) bleCommand.getCallback()).onStop();
+              }
+            } else {
+              r = () -> bleCommand.getCallback().onFailure(new GattException(status));
+            }
+            mBleManager.runBleCallbackMethodInContext(r,
+                bleCommand.getCallback().isRunOnUiThread());
           }
         }
       }
@@ -289,21 +244,22 @@ public class BleConnector {
    * Enables notification for this callback. If notification for characteristics is already enabled
    * it only adds the callback. Oterwise notification is turned on for this characteristic.
    */
-  public boolean enableCharacteristicNotify(String uuidAction,
-      BleNotifyCallback bleNotifyCallback) {
+  public boolean enableCharacteristicNotify(BleCommand command) {
+    command.setHandler(mHandler);
     if (mCharacteristic != null
         && (mCharacteristic.getProperties() | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
 
-      if (mBleBluetooth.addCallback(uuidAction, bleNotifyCallback) <= 1) {
+      if (mBleBluetooth.addCommand(command) <= 1) {
         if (!setCharacteristicNotification(mBluetoothGatt, mCharacteristic, true,
-            bleNotifyCallback)) {
-          mBleBluetooth.removeCallback(uuidAction, bleNotifyCallback);
+            (BleNotifyOrIndicateCallback) command.getCallback())) {
+          mBleBluetooth.removeCommand(command);
+          return true;
         }
       } else {
         return true;
       }
     } else {
-      bleNotifyCallback
+      command.getCallback()
           .onFailure(new OtherException("this characteristic not support notify!"));
       return true;
     }
@@ -316,25 +272,26 @@ public class BleConnector {
    *
    * @return True if the notification stop was already handled, false otherwise.
    */
-  public boolean disableCharacteristicNotify(String uuidAction,
-      BleNotifyCallback bleNotifyCallback) {
+  public boolean disableCharacteristicNotify(BleCommand command) {
+    command.setHandler(mHandler);
+    BleNotifyOrIndicateCallback callback =
+        (BleNotifyOrIndicateCallback) command.getCallback();
     if (mCharacteristic != null
         && (mCharacteristic.getProperties() | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
 
-      if (mBleBluetooth.removeCallback(uuidAction, bleNotifyCallback) <= 1) {
-        setCharacteristicNotification(mBluetoothGatt, mCharacteristic, false, bleNotifyCallback);
+      if (mBleBluetooth.removeCommand(command) <= 1) {
+        return setCharacteristicNotification(mBluetoothGatt, mCharacteristic, false,
+            callback);
       } else {
-        bleNotifyCallback.onStart();
+        mBleManager.runBleCallbackMethodInContext(() -> callback.onStart(), callback.isRunOnUiThread());
         return true;
       }
     } else {
-      if (bleNotifyCallback != null) {
-        bleNotifyCallback
-            .onFailure(new OtherException("this characteristic not support notify!"));
-        return true;
-      }
+      mBleManager.runBleCallbackMethodInContext(
+          () -> callback.onFailure(new OtherException("this characteristic not support notify!")),
+          callback.isRunOnUiThread());
+      return true;
     }
-    return false;
   }
 
   /**
@@ -343,39 +300,38 @@ public class BleConnector {
   private boolean setCharacteristicNotification(BluetoothGatt gatt,
       BluetoothGattCharacteristic characteristic,
       boolean enable,
-      BleNotifyCallback bleNotifyCallback) {
+      BleNotifyOrIndicateCallback notifyOrIndicateCallback) {
     if (gatt == null || characteristic == null) {
-      if (bleNotifyCallback != null) {
-        bleNotifyCallback
-            .onFailure(new OtherException("gatt or characteristic equal null"));
-      }
+      mBleManager.runBleCallbackMethodInContext(() -> notifyOrIndicateCallback
+              .onFailure(new OtherException("gatt or characteristic equal null")),
+          notifyOrIndicateCallback.isRunOnUiThread());
       return false;
     }
 
     boolean success1 = gatt.setCharacteristicNotification(characteristic, enable);
     if (!success1) {
-      if (bleNotifyCallback != null) {
-        bleNotifyCallback
-            .onFailure(new OtherException("gatt setCharacteristicNotification fail"));
-      }
+      mBleManager.runBleCallbackMethodInContext(() -> notifyOrIndicateCallback
+              .onFailure(new OtherException("gatt setCharacteristicNotification fail")),
+          notifyOrIndicateCallback.isRunOnUiThread());
       return false;
     }
 
     BluetoothGattDescriptor descriptor;
-    descriptor = characteristic.getDescriptor(characteristic.getUuid());
+//    descriptor = characteristic.getDescriptor(characteristic.getUuid());
+    descriptor = characteristic.getDescriptor(UUID_CLIENT_CHARACTERISTIC_CONFIG_DESCRIPTOR);
     if (descriptor == null) {
-      if (bleNotifyCallback != null) {
-        bleNotifyCallback.onFailure(new OtherException("descriptor equals null"));
-      }
+      mBleManager.runBleCallbackMethodInContext(
+          () -> notifyOrIndicateCallback.onFailure(new OtherException("descriptor not available")),
+          notifyOrIndicateCallback.isRunOnUiThread());
       return false;
     } else {
       descriptor.setValue(enable ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE :
           BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
       boolean success2 = gatt.writeDescriptor(descriptor);
       if (!success2) {
-        if (bleNotifyCallback != null) {
-          bleNotifyCallback.onFailure(new OtherException("gatt writeDescriptor fail"));
-        }
+        mBleManager.runBleCallbackMethodInContext(() -> notifyOrIndicateCallback
+                .onFailure(new OtherException("gatt writeDescriptor fail")),
+            notifyOrIndicateCallback.isRunOnUiThread());
       }
       return success2;
     }
@@ -384,22 +340,21 @@ public class BleConnector {
   /**
    * indicate
    */
-  public void enableCharacteristicIndicate(String uuidAction,
-      BleIndicateCallback bleIndicateCallback) {
+  public void enableCharacteristicIndicate(BleCommand command) {
+    command.setHandler(mHandler);
+    BleNotifyOrIndicateCallback callback = (BleNotifyOrIndicateCallback) command.getCallback();
     if (mCharacteristic != null
         && (mCharacteristic.getProperties() | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
-      if (mBleBluetooth.addCallback(uuidAction, bleIndicateCallback) <= 1) {
+
+      if (mBleBluetooth.addCommand(command) <= 1) {
 
         if (!setCharacteristicIndication(mBluetoothGatt, mCharacteristic,
-            true, bleIndicateCallback)) {
-          mBleBluetooth.removeCallback(uuidAction, bleIndicateCallback);
+            true, callback)) {
+          mBleBluetooth.removeCommand(command);
         }
       }
     } else {
-      if (bleIndicateCallback != null) {
-        bleIndicateCallback
-            .onFailure(new OtherException("this characteristic not support indicate!"));
-      }
+      callback.onFailure(new OtherException("this characteristic not support indicate!"));
     }
   }
 
@@ -410,10 +365,10 @@ public class BleConnector {
   private boolean setCharacteristicIndication(BluetoothGatt gatt,
       BluetoothGattCharacteristic characteristic,
       boolean enable,
-      BleIndicateCallback bleIndicateCallback) {
+      BleNotifyOrIndicateCallback bleNotifyOrIndicateCallback) {
     if (gatt == null || characteristic == null) {
-      if (bleIndicateCallback != null) {
-        bleIndicateCallback
+      if (bleNotifyOrIndicateCallback != null) {
+        bleNotifyOrIndicateCallback
             .onFailure(new OtherException("gatt or characteristic equal null"));
       }
       return false;
@@ -421,8 +376,8 @@ public class BleConnector {
 
     boolean success1 = gatt.setCharacteristicNotification(characteristic, enable);
     if (!success1) {
-      if (bleIndicateCallback != null) {
-        bleIndicateCallback
+      if (bleNotifyOrIndicateCallback != null) {
+        bleNotifyOrIndicateCallback
             .onFailure(new OtherException("gatt setCharacteristicNotification fail"));
       }
       return false;
@@ -431,8 +386,8 @@ public class BleConnector {
     BluetoothGattDescriptor descriptor;
     descriptor = characteristic.getDescriptor(characteristic.getUuid());
     if (descriptor == null) {
-      if (bleIndicateCallback != null) {
-        bleIndicateCallback.onFailure(new OtherException("descriptor equals null"));
+      if (bleNotifyOrIndicateCallback != null) {
+        bleNotifyOrIndicateCallback.onFailure(new OtherException("descriptor equals null"));
       }
       return false;
     } else {
@@ -440,8 +395,8 @@ public class BleConnector {
           BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
       boolean success2 = gatt.writeDescriptor(descriptor);
       if (!success2) {
-        if (bleIndicateCallback != null) {
-          bleIndicateCallback
+        if (bleNotifyOrIndicateCallback != null) {
+          bleNotifyOrIndicateCallback
               .onFailure(new OtherException("gatt writeDescriptor fail"));
         }
       }
@@ -452,30 +407,27 @@ public class BleConnector {
   /**
    * write
    */
-  public boolean writeCharacteristic(String uuidAction, byte[] data,
-      BleWriteCallback bleWriteCallback) {
-    if (data == null || data.length <= 0) {
-      bleWriteCallback.onFailure(new OtherException("the data to be written is empty"));
-      return true;
-    }
-
+  public boolean writeCharacteristic(
+      BleCommand command) {
+    command.setHandler(mHandler);
+    BleWriteCallback callback = (BleWriteCallback) command.getCallback();
     if (mCharacteristic == null
         || (mCharacteristic.getProperties() & (BluetoothGattCharacteristic.PROPERTY_WRITE
         | BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE)) == 0) {
-      bleWriteCallback
+      callback
           .onFailure(new OtherException("this characteristic not support write!"));
       return true;
     }
 
-    if (mCharacteristic.setValue(data)) {
-      mBleBluetooth.addCallback(uuidAction, bleWriteCallback);
+    if (mCharacteristic.setValue(command.getValue())) {
+      mBleBluetooth.addCommand(command);
       if (!mBluetoothGatt.writeCharacteristic(mCharacteristic)) {
-        mBleBluetooth.removeCallback(uuidAction, bleWriteCallback);
-        bleWriteCallback.onFailure(new OtherException("gatt writeCharacteristic fail"));
+        mBleBluetooth.removeCommand(command);
+        callback.onFailure(new OtherException("gatt writeCharacteristic fail"));
         return true;
       }
     } else {
-      bleWriteCallback.onFailure(
+      callback.onFailure(
           new OtherException("Updates the locally stored value of this characteristic fail"));
       return true;
     }
@@ -485,18 +437,20 @@ public class BleConnector {
   /**
    * read
    */
-  public boolean readCharacteristic(String uuidAction, BleReadCallback bleReadCallback) {
+  public boolean readCharacteristic(BleCommand command) {
+    command.setHandler(mHandler);
+    BleReadCallback callback = (BleReadCallback) command.getCallback();
     if (mCharacteristic != null
         && (mCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
 
-      mBleBluetooth.addCallback(uuidAction, bleReadCallback);
+      mBleBluetooth.addCommand(command);
       if (!mBluetoothGatt.readCharacteristic(mCharacteristic)) {
-        mBleBluetooth.removeCallback(uuidAction, bleReadCallback);
-        bleReadCallback.onFailure(new OtherException("gatt readCharacteristic fail"));
+        mBleBluetooth.removeCommand(command);
+        callback.onFailure(new OtherException("gatt readCharacteristic fail"));
         return true;
       }
     } else {
-      bleReadCallback
+      callback
           .onFailure(new OtherException("this characteristic not support read!"));
       return true;
     }
@@ -506,20 +460,21 @@ public class BleConnector {
   /**
    * read
    */
-  public boolean readDescriptor(String uuidAction,
-      BleReadDescriptorCallback bleReadDescriptorCallback) {
+  public boolean readDescriptor(BleCommand command) {
+    command.setHandler(mHandler);
+    BleReadDescriptorCallback callback = (BleReadDescriptorCallback) command.getCallback();
     if (mCharacteristic != null && mDescriptor != null) {
 
-      mBleBluetooth.addCallback(uuidAction, bleReadDescriptorCallback);
+      mBleBluetooth.addCommand(command);
       if (!mBluetoothGatt.readDescriptor(mDescriptor)) {
-          bleReadDescriptorCallback
-              .onFailure(new OtherException("gatt readDescriptor fail"));
-          return true;
+        callback
+            .onFailure(new OtherException("gatt readDescriptor fail"));
+        return true;
       }
     } else {
-        bleReadDescriptorCallback
-            .onFailure(new OtherException("this descriptor not support read!"));
-        return true;
+      callback
+          .onFailure(new OtherException("this descriptor not support read!"));
+      return true;
     }
     return false;
   }
@@ -527,22 +482,24 @@ public class BleConnector {
   /**
    * rssi
    */
-  public void readRemoteRssi(String uuidAction, BleRssiCallback bleRssiCallback) {
-    mBleBluetooth.addCallback(uuidAction, bleRssiCallback);
+  public void readRemoteRssi(BleCommand command) {
+    command.setHandler(mHandler);
+    mBleBluetooth.addCommand(command);
     if (!mBluetoothGatt.readRemoteRssi()) {
-      mBleBluetooth.removeCallback(uuidAction, bleRssiCallback);
-      bleRssiCallback.onFailure(new OtherException("gatt readRemoteRssi fail"));
+      mBleBluetooth.removeCommand(command);
+      command.getCallback().onFailure(new OtherException("gatt readRemoteRssi fail"));
     }
   }
 
   /**
    * set mtu
    */
-  public void setMtu(String uuidAction, int requiredMtu,
-      BleMtuChangedCallback bleMtuChangedCallback) {
-    mBleBluetooth.addCallback(uuidAction, bleMtuChangedCallback);
+  public void setMtu(int requiredMtu,
+      BleCommand command) {
+    command.setHandler(mHandler);
+    mBleBluetooth.addCommand(command);
     if (!mBluetoothGatt.requestMtu(requiredMtu)) {
-      bleMtuChangedCallback.onFailure(new OtherException("gatt requestMtu fail"));
+      command.getCallback().onFailure(new OtherException("gatt requestMtu fail"));
     }
   }
 
