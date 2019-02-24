@@ -41,51 +41,48 @@ public class CharacteristicListFragment extends Fragment {
         mResultAdapter = new ResultAdapter(getActivity());
         ListView listView_device = v.findViewById(R.id.list_service);
         listView_device.setAdapter(mResultAdapter);
-        listView_device.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                final BluetoothGattCharacteristic characteristic = mResultAdapter.getItem(position);
-                final List<Integer> propList = new ArrayList<>();
-                List<String> propNameList = new ArrayList<>();
-                int charaProp = characteristic.getProperties();
-                if ((charaProp & BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
-                    propList.add(CharacteristicOperationFragment.PROPERTY_READ);
-                    propNameList.add("Read");
-                }
-                if ((charaProp & BluetoothGattCharacteristic.PROPERTY_WRITE) > 0) {
-                    propList.add(CharacteristicOperationFragment.PROPERTY_WRITE);
-                    propNameList.add("Write");
-                }
-                if ((charaProp & BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) > 0) {
-                    propList.add(CharacteristicOperationFragment.PROPERTY_WRITE_NO_RESPONSE);
-                    propNameList.add("Write No Response");
-                }
-                if ((charaProp & BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
-                    propList.add(CharacteristicOperationFragment.PROPERTY_NOTIFY);
-                    propNameList.add("Notify");
-                }
-                if ((charaProp & BluetoothGattCharacteristic.PROPERTY_INDICATE) > 0) {
-                    propList.add(CharacteristicOperationFragment.PROPERTY_INDICATE);
-                    propNameList.add("Indicate");
-                }
+        listView_device.setOnItemClickListener((parent, view, position, id) -> {
+            final BluetoothGattCharacteristic characteristic = mResultAdapter.getItem(position);
+            final List<Integer> propList = new ArrayList<>();
+            List<String> propNameList = new ArrayList<>();
+            int charaProp = characteristic.getProperties();
+            if ((charaProp & BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
+                propList.add(CharacteristicOperationFragment.PROPERTY_READ);
+                propNameList.add("Read");
+            }
+            if ((charaProp & BluetoothGattCharacteristic.PROPERTY_WRITE) > 0) {
+                propList.add(CharacteristicOperationFragment.PROPERTY_WRITE);
+                propNameList.add("Write");
+            }
+            if ((charaProp & BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE) > 0) {
+                propList.add(CharacteristicOperationFragment.PROPERTY_WRITE_NO_RESPONSE);
+                propNameList.add("Write No Response");
+            }
+            if ((charaProp & BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
+                propList.add(CharacteristicOperationFragment.PROPERTY_NOTIFY);
+                propNameList.add("Notify");
+            }
+            if ((charaProp & BluetoothGattCharacteristic.PROPERTY_INDICATE) > 0) {
+                propList.add(CharacteristicOperationFragment.PROPERTY_INDICATE);
+                propNameList.add("Indicate");
+            }
 
-                if (propList.size() > 1) {
-                    new AlertDialog.Builder(getActivity())
-                            .setTitle(getActivity().getString(R.string.select_operation_type))
-                            .setItems(propNameList.toArray(new String[propNameList.size()]), new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    ((OperationActivity) getActivity()).setCharacteristic(characteristic);
-                                    ((OperationActivity) getActivity()).setCharaProp(propList.get(which));
-                                    ((OperationActivity) getActivity()).changePage(2);
-                                }
-                            })
-                            .show();
-                } else if (propList.size() > 0) {
-                    ((OperationActivity) getActivity()).setCharacteristic(characteristic);
-                    ((OperationActivity) getActivity()).setCharaProp(propList.get(0));
-                    ((OperationActivity) getActivity()).changePage(2);
-                }
+            if (propList.size() > 1) {
+                new AlertDialog.Builder(getActivity())
+                        .setTitle(getActivity().getString(R.string.select_operation_type))
+                        .setItems(propNameList.toArray(new String[propNameList.size()]), new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                ((OperationActivity) getActivity()).setCharacteristic(characteristic);
+                                ((OperationActivity) getActivity()).setCharaProp(propList.get(which));
+                                ((OperationActivity) getActivity()).changePage(2);
+                            }
+                        })
+                        .show();
+            } else if (propList.size() > 0) {
+                ((OperationActivity) getActivity()).setCharacteristic(characteristic);
+                ((OperationActivity) getActivity()).setCharaProp(propList.get(0));
+                ((OperationActivity) getActivity()).changePage(2);
             }
         });
     }

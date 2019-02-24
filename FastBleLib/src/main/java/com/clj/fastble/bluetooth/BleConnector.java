@@ -15,7 +15,6 @@ import com.clj.fastble.callback.BleByteResultCallback;
 import com.clj.fastble.callback.BleIntResultCallback;
 import com.clj.fastble.callback.BleNotifyOrIndicateCallback;
 import com.clj.fastble.callback.BleMtuChangedCallback;
-import com.clj.fastble.callback.BleReadDescriptorCallback;
 import com.clj.fastble.callback.BleWriteCallback;
 import com.clj.fastble.data.BleMsg;
 import com.clj.fastble.data.BleWriteState;
