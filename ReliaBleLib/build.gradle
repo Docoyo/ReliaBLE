@@ -1,14 +1,13 @@
-apply plugin: 'com.android.application'
+apply plugin: 'com.android.library'
 
 android {
     compileSdkVersion 27
 
     defaultConfig {
-        applicationId "com.clj.blesample"
         minSdkVersion 23
         targetSdkVersion 27
-        versionCode 233
-        versionName "2.3.3"
+        versionCode 235
+        versionName "0.0.1"
     }
     buildTypes {
         release {
@@ -16,16 +15,13 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-
 }
 
 dependencies {
-    implementation fileTree(include: ['*.jar'], dir: 'libs')
-    testImplementation 'junit:junit:4.12'
-    implementation 'com.android.support:appcompat-v7:27.1.1'
-    implementation project(':ReliaBleLib')
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
 }
