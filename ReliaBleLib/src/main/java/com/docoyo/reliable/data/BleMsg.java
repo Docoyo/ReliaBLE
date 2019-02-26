@@ -27,31 +27,21 @@ public class BleMsg {
     public static final int MSG_CHA_NOTIFY_STOP= 0x12;
     public static final int MSG_CHA_NOTIFY_DATA_CHANGE = 0x13;
 
-    // Indicate
-    public static final int MSG_CHA_INDICATE_START = 0x21;
-    public static final int MSG_CHA_INDICATE_STOP = 0x22;
-    public static final int MSG_CHA_INDICATE_DATA_CHANGE = 0x23;
-
     // Write
-    public static final int MSG_CHA_WRITE_START = 0x31;
     public static final int MSG_CHA_WRITE_RESULT = 0x32;
     public static final int MSG_SPLIT_WRITE_NEXT = 0x33;
 
     // Read
-    public static final int MSG_CHA_READ_START = 0x41;
     public static final int MSG_CHA_READ_RESULT = 0x42;
 
     // Rssi
-    public static final int MSG_READ_RSSI_START = 0x51;
     public static final int MSG_READ_RSSI_RESULT = 0x52;
 
     // Mtu
     public static final int MSG_SET_MTU_START = 0x61;
     public static final int MSG_SET_MTU_RESULT = 0x62;
 
-
     // read Descriptor
-    public static final int MSG_DESC_READ_START = 0x71;
     public static final int MSG_DESC_READ_RESULT = 0x72;
 
 }

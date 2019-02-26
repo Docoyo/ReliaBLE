@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.os.Handler;
 import com.docoyo.reliable.callback.BleBaseCallback;
+import java.util.Objects;
 
 public class BleCommand {
 
@@ -18,7 +19,7 @@ public class BleCommand {
   private Handler handler;
 
   public BleCommand(BleCommandType bleCommandType, String uuidService, String uuidCharacteristic,
-      String uuidDescriptor, BleBaseCallback callback){
+      String uuidDescriptor, BleBaseCallback callback) {
     this(bleCommandType, uuidService, uuidCharacteristic, uuidDescriptor, callback, null);
   }
 
@@ -49,7 +50,8 @@ public class BleCommand {
   }
 
   public String getUuidWithCallback() {
-    return bleCommandType.name() + serviceUuid + characteristicsUuid + descriptorUuid + String.valueOf(callback.hashCode());
+    return bleCommandType.name() + serviceUuid + characteristicsUuid + descriptorUuid + String
+        .valueOf(callback.hashCode());
   }
 
   public BleCommandType getBleCommandType() {
@@ -76,12 +78,17 @@ public class BleCommand {
     this.callback = bleCallback;
   }
 
-  public static BleCommand fromCharacteristic(BleCommandType bleCommandType, BluetoothGattCharacteristic characteristic){
-    return new BleCommand(bleCommandType, characteristic.getService().getUuid().toString(), characteristic.getUuid().toString(), null, null);
+  public static BleCommand fromCharacteristic(BleCommandType bleCommandType,
+      BluetoothGattCharacteristic characteristic) {
+    return new BleCommand(bleCommandType, characteristic.getService().getUuid().toString(),
+        characteristic.getUuid().toString(), null, null);
   }
 
-  public static BleCommand fromDescriptor(BleCommandType bleCommandType, BluetoothGattDescriptor descriptor){
-    return new BleCommand(bleCommandType, descriptor.getCharacteristic().getService().getUuid().toString(), descriptor.getCharacteristic().getUuid().toString(), descriptor.getUuid().toString(), null);
+  public static BleCommand fromDescriptor(BleCommandType bleCommandType,
+      BluetoothGattDescriptor descriptor) {
+    return new BleCommand(bleCommandType,
+        descriptor.getCharacteristic().getService().getUuid().toString(),
+        descriptor.getCharacteristic().getUuid().toString(), descriptor.getUuid().toString(), null);
   }
 
   public byte[] getValue() {
@@ -92,12 +99,33 @@ public class BleCommand {
     return valueInt;
   }
 
-  public void setHandler(Handler handler){
-   this.handler = handler;
+  public void setHandler(Handler handler) {
+    this.handler = handler;
   }
 
-  public Handler getHandler(){
-   return this.handler;
+  public Handler getHandler() {
+    return this.handler;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    BleCommand that = (BleCommand) o;
+    return Objects.equals(callback, that.callback) &&
+        bleCommandType == that.bleCommandType &&
+        Objects.equals(serviceUuid, that.serviceUuid) &&
+        Objects.equals(characteristicsUuid, that.characteristicsUuid) &&
+        Objects.equals(descriptorUuid, that.descriptorUuid);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(callback, bleCommandType, serviceUuid, characteristicsUuid, descriptorUuid);
   }
 
   public enum BleCommandType {
@@ -106,8 +134,6 @@ public class BleCommand {
     WRITE,
     NOTIFY,
     NOTIFY_STOP,
-    INDICATE,
-    INDICATE_STOP,
     READ_RSSI,
     SET_MTU
   }

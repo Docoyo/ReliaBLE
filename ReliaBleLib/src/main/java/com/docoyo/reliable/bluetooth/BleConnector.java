@@ -10,6 +10,7 @@ import android.os.Handler;
 import android.os.Message;
 
 import com.docoyo.reliable.BleManager;
+import com.docoyo.reliable.bluetooth.BleCommand.BleCommandType;
 import com.docoyo.reliable.callback.BleBaseCallback;
 import com.docoyo.reliable.callback.BleByteResultCallback;
 import com.docoyo.reliable.callback.BleIntResultCallback;
@@ -64,22 +65,6 @@ public class BleConnector {
           }
 
           case BleMsg.MSG_CHA_NOTIFY_DATA_CHANGE: {
-            handleDataChange(msg);
-            break;
-          }
-
-          case BleMsg.MSG_CHA_INDICATE_START: {
-
-            handleStartStop(msg);
-            break;
-          }
-
-          case BleMsg.MSG_CHA_INDICATE_STOP: {
-            handleStartStop(msg);
-            break;
-          }
-
-          case BleMsg.MSG_CHA_INDICATE_DATA_CHANGE: {
             handleDataChange(msg);
             break;
           }
@@ -262,8 +247,6 @@ public class BleConnector {
         return writeCharacteristic(command);
       case NOTIFY:
         return enableCharacteristicNotify(command);
-      case INDICATE:
-        return enableCharacteristicIndicate(command);
       case NOTIFY_STOP:
         return disableCharacteristicNotify(command);
       case READ_RSSI:
@@ -276,6 +259,11 @@ public class BleConnector {
     }
   }
 
+  /**
+   * Notifies the callee via callback about a failure
+   *
+   * @return true to indicate that callback has been handled
+   */
   private boolean handleError(BleBaseCallback cb, BleException e) {
     mBleManager.runBleCallbackMethodInContext(() -> cb.onFailure(e), cb.isRunOnUiThread());
     return true;
@@ -314,23 +302,33 @@ public class BleConnector {
    * @return True if the notification stop was already handled, false otherwise.
    */
   public boolean disableCharacteristicNotify(BleCommand command) {
-    command.setHandler(mHandler);
     BleNotifyOrIndicateCallback callback =
         (BleNotifyOrIndicateCallback) command.getCallback();
 
     if ((mCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) <= 0) {
       return handleError(command.getCallback(),
-          new OtherException("this characteristic not support notify!"));
+          new OtherException(
+              "Characteristic " + command.getCharacteristicsUuid() + " not support notify!"));
     }
 
-    if (mBleBluetooth.removeCommand(command) <= 1) {
-      return setCharacteristic(mBluetoothGatt, mCharacteristic,
-          callback, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
+    // Remove notify callback that was subscribed
+    BleCommand notifyCommand = new BleCommand(BleCommandType.NOTIFY, command.getServiceUuid(),
+        command.getCharacteristicsUuid(), command.getDescriptorUuid(), command.getCallback());
+    if (mBleBluetooth.removeCommand(notifyCommand) >= 1) {
+      mBleManager.runBleCallbackMethodInContext(
+          () -> ((BleNotifyOrIndicateCallback) command.getCallback()).onStop(),
+          command.getCallback().isRunOnUiThread());
+      return true;
     }
 
-    mBleManager
-        .runBleCallbackMethodInContext(() -> callback.onStop(), callback.isRunOnUiThread());
-    return true;
+    mBleBluetooth.addCommand(command);
+    if (!setCharacteristic(mBluetoothGatt, mCharacteristic,
+        callback, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)) {
+      return handleError(command.getCallback(), new OtherException(
+          "Could not properly unsubscribe characteristic " + command.getCharacteristicsUuid()));
+    }
+
+    return false;
   }
 
   /**
@@ -368,34 +366,6 @@ public class BleConnector {
       return true;
     }
   }
-
-  /**
-   * indicate
-   */
-  public boolean enableCharacteristicIndicate(BleCommand command) {
-    command.setHandler(mHandler);
-    BleNotifyOrIndicateCallback callback = (BleNotifyOrIndicateCallback) command.getCallback();
-    if (mCharacteristic != null
-        && (mCharacteristic.getProperties() | BluetoothGattCharacteristic.PROPERTY_NOTIFY) <= 0) {
-      return handleError(command.getCallback(),
-          new OtherException("this characteristic not support indicate!"));
-    }
-
-    // only add callback
-    if (mBleBluetooth.addCommand(command) > 1) {
-      return true;
-    }
-
-    // activate indication
-    if (!setCharacteristic(mBluetoothGatt, mCharacteristic,
-        callback, BluetoothGattDescriptor.ENABLE_INDICATION_VALUE)) {
-      mBleBluetooth.removeCommand(command);
-      return handleError(command.getCallback(),
-          new OtherException("Could not activate indication"));
-    }
-    return false;
-  }
-
 
   /**
    * write

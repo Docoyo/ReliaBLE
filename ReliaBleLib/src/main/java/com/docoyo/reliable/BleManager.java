@@ -402,27 +402,6 @@ public class BleManager {
     }
   }
 
-
-  /**
-   * indicate
-   */
-  public void indicate(BleDevice bleDevice,
-      String uuidService,
-      String uuidCharacteristic,
-      BleNotifyOrIndicateCallback callback) {
-    if (callback == null) {
-      throw new IllegalArgumentException("BleNotifyOrIndicateCallback can not be Null!");
-    }
-
-    BleBluetooth bleBluetooth = multipleBluetoothController.getBleBluetooth(bleDevice);
-    if (bleBluetooth == null) {
-      callback.onFailure(new OtherException("This device not connect!"));
-    } else {
-      bleBluetooth
-          .enqueueCommand(BleCommandType.INDICATE, uuidService, uuidCharacteristic, null, callback);
-    }
-  }
-
   /**
    * stop notify, remove callback
    */
@@ -440,24 +419,6 @@ public class BleManager {
     }
   }
 
-
-  /**
-   * stop indicate, remove callback
-   */
-  public void stopIndicate(BleDevice bleDevice,
-      String uuidService,
-      String uuidCharacteristic,
-      BleNotifyOrIndicateCallback callback) {
-
-    BleBluetooth bleBluetooth = multipleBluetoothController.getBleBluetooth(bleDevice);
-    if (bleBluetooth == null) {
-      callback.onFailure(new OtherException("This device not connect!"));
-    } else {
-      bleBluetooth
-          .enqueueCommand(BleCommandType.INDICATE_STOP, uuidService, uuidCharacteristic, null, callback);
-    }
-
-  }
 
   /**
    * write

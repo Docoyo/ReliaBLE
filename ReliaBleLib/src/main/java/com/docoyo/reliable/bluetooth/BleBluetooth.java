@@ -84,6 +84,16 @@ public class BleBluetooth {
     }
   }
 
+  synchronized int getQueueSize(BleCommand command) {
+    List<BleCommand> commands = bleCommandHashMap.get(command.getUuid());
+    if (commands == null) {
+      return 0;
+    }
+
+    return commands.size();
+
+  }
+
   public String getDeviceKey() {
     return bleDevice.getKey();
   }
@@ -393,7 +403,8 @@ public class BleBluetooth {
     }
 
     private void handleBleResponseCharacteristic(BleCommandType type, int messageId,
-        BluetoothGattCharacteristic characteristic, int status, boolean removeCallback, boolean dequeue) {
+        BluetoothGattCharacteristic characteristic, int status, boolean removeCallback,
+        boolean dequeue) {
       BleCommand command = BleCommand.fromCharacteristic(type, characteristic);
       List<BleCommand> bleCommands = bleCommandHashMap.get(command.getUuid());
 
@@ -413,7 +424,7 @@ public class BleBluetooth {
         if (removeCallback) {
           bleCommandHashMap.remove(bleCommands.get(0).getUuid());
         }
-        if (dequeue){
+        if (dequeue) {
           bleQueue.getHandler().obtainMessage(Messages.MSG_DEQUEUE, bleCommands.get(0))
               .sendToTarget();
         }
@@ -500,9 +511,6 @@ public class BleBluetooth {
       handleBleResponseCharacteristic(BleCommandType.NOTIFY, BleMsg.MSG_CHA_NOTIFY_DATA_CHANGE,
           characteristic, 0, false, false);
 
-      handleBleResponseCharacteristic(BleCommandType.INDICATE, BleMsg.MSG_CHA_INDICATE_DATA_CHANGE,
-          characteristic, 0, false, false);
-
     }
 
     @Override
@@ -515,12 +523,6 @@ public class BleBluetooth {
             descriptor.getCharacteristic(), status, false, true);
       } else if (Arrays.equals(value, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)) {
         handleBleResponseCharacteristic(BleCommandType.NOTIFY_STOP, BleMsg.MSG_CHA_NOTIFY_STOP,
-            descriptor.getCharacteristic(), status, true, true);
-      } else if (Arrays.equals(value, BluetoothGattDescriptor.ENABLE_INDICATION_VALUE)) {
-        handleBleResponseCharacteristic(BleCommandType.INDICATE, BleMsg.MSG_CHA_INDICATE_START,
-            descriptor.getCharacteristic(), status, false, true);
-      } else if (Arrays.equals(value, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE)) {
-        handleBleResponseCharacteristic(BleCommandType.INDICATE_STOP, BleMsg.MSG_CHA_INDICATE_STOP,
             descriptor.getCharacteristic(), status, true, true);
       } else {
         BleLog

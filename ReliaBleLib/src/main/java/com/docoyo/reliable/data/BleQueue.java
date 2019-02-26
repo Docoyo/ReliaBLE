@@ -72,7 +72,7 @@ public class BleQueue {
             }
 
           default:
-            BleLog.e("Unknown command " + command.getBleCommandType().toString());
+            BleLog.d("Received Message " + msg.what);
         }
       }
     };
