@@ -12,7 +12,7 @@ public abstract class BleBaseCallback {
     return runOnUiThread;
   }
 
-  private boolean runOnUiThread = Looper.getMainLooper().getThread() == Thread.currentThread();
+  private final boolean runOnUiThread = Looper.getMainLooper().getThread() == Thread.currentThread();
 
   public String getKey() {
     return key;

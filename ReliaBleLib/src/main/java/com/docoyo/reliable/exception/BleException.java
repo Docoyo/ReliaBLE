@@ -7,14 +7,14 @@ public abstract class BleException implements Serializable {
 
     private static final long serialVersionUID = 8004414918500865564L;
 
-    public static final int ERROR_CODE_TIMEOUT = 100;
-    public static final int ERROR_CODE_GATT = 101;
-    public static final int ERROR_CODE_OTHER = 102;
+    static final int ERROR_CODE_TIMEOUT = 100;
+    static final int ERROR_CODE_GATT = 101;
+    static final int ERROR_CODE_OTHER = 102;
 
     private int code;
     private String description;
 
-    public BleException(int code, String description) {
+    BleException(int code, String description) {
         this.code = code;
         this.description = description;
     }

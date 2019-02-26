@@ -74,10 +74,6 @@ public class BleCommand {
     return callback;
   }
 
-  public void addCallback(BleBaseCallback bleCallback) {
-    this.callback = bleCallback;
-  }
-
   public static BleCommand fromCharacteristic(BleCommandType bleCommandType,
       BluetoothGattCharacteristic characteristic) {
     return new BleCommand(bleCommandType, characteristic.getService().getUuid().toString(),

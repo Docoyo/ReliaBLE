@@ -68,14 +68,12 @@ public class CharacteristicListFragment extends Fragment {
             if (propList.size() > 1) {
                 new AlertDialog.Builder(getActivity())
                         .setTitle(getActivity().getString(R.string.select_operation_type))
-                        .setItems(propNameList.toArray(new String[propNameList.size()]), new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
+                        .setItems(propNameList.toArray(new String[propNameList.size()]),
+                            (dialog, which) -> {
                                 ((OperationActivity) getActivity()).setCharacteristic(characteristic);
                                 ((OperationActivity) getActivity()).setCharaProp(propList.get(which));
                                 ((OperationActivity) getActivity()).changePage(2);
-                            }
-                        })
+                            })
                         .show();
             } else if (propList.size() > 0) {
                 ((OperationActivity) getActivity()).setCharacteristic(characteristic);
@@ -96,8 +94,8 @@ public class CharacteristicListFragment extends Fragment {
 
     private class ResultAdapter extends BaseAdapter {
 
-        private Context context;
-        private List<BluetoothGattCharacteristic> characteristicList;
+        private final Context context;
+        private final List<BluetoothGattCharacteristic> characteristicList;
 
         ResultAdapter(Context context) {
             this.context = context;

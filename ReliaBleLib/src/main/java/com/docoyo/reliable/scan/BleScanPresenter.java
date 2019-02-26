@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
-public abstract class BleScanPresenter implements BluetoothAdapter.LeScanCallback {
+abstract class BleScanPresenter implements BluetoothAdapter.LeScanCallback {
 
     private String[] mDeviceNames;
     private String mDeviceMac;
@@ -32,9 +32,9 @@ public abstract class BleScanPresenter implements BluetoothAdapter.LeScanCallbac
     private long mScanTimeout;
     private BleScanPresenterImp mBleScanPresenterImp;
 
-    private List<BleDevice> mBleDeviceList = new ArrayList<>();
+    private final List<BleDevice> mBleDeviceList = new ArrayList<>();
 
-    private Handler mMainHandler = new Handler(Looper.getMainLooper());
+    private final Handler mMainHandler = new Handler(Looper.getMainLooper());
     private HandlerThread mHandlerThread;
     private Handler mHandler;
     private boolean mHandling;
@@ -143,12 +143,7 @@ public abstract class BleScanPresenter implements BluetoothAdapter.LeScanCallbac
                     + "  scanRecord:" + HexUtil.formatHexString(bleDevice.getScanRecord()));
 
             mBleDeviceList.add(bleDevice);
-            mMainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    BleScanner.getInstance().stopLeScan();
-                }
-            });
+            mMainHandler.post(() -> BleScanner.getInstance().stopLeScan());
 
         } else {
             AtomicBoolean hasFound = new AtomicBoolean(false);
@@ -165,12 +160,7 @@ public abstract class BleScanPresenter implements BluetoothAdapter.LeScanCallbac
                         + "  scanRecord: " + HexUtil.formatHexString(bleDevice.getScanRecord(), true));
 
                 mBleDeviceList.add(bleDevice);
-                mMainHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        onScanning(bleDevice);
-                    }
-                });
+                mMainHandler.post(() -> onScanning(bleDevice));
             }
         }
     }
@@ -181,44 +171,29 @@ public abstract class BleScanPresenter implements BluetoothAdapter.LeScanCallbac
         removeHandlerMsg();
 
         if (success && mScanTimeout > 0) {
-            mMainHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    BleScanner.getInstance().stopLeScan();
-                }
-            }, mScanTimeout);
+            mMainHandler.postDelayed(() -> BleScanner.getInstance().stopLeScan(), mScanTimeout);
         }
 
-        mMainHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                onScanStarted(success);
-            }
-        });
+        mMainHandler.post(() -> onScanStarted(success));
     }
 
     public final void notifyScanStopped() {
         mHandling = false;
         mHandlerThread.quit();
         removeHandlerMsg();
-        mMainHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                onScanFinished(mBleDeviceList);
-            }
-        });
+        mMainHandler.post(() -> onScanFinished(mBleDeviceList));
     }
 
-    public final void removeHandlerMsg() {
+    private void removeHandlerMsg() {
         mMainHandler.removeCallbacksAndMessages(null);
         mHandler.removeCallbacksAndMessages(null);
     }
 
-    public abstract void onScanStarted(boolean success);
+    protected abstract void onScanStarted(boolean success);
 
-    public abstract void onLeScan(BleDevice bleDevice);
+    protected abstract void onLeScan(BleDevice bleDevice);
 
-    public abstract void onScanning(BleDevice bleDevice);
+    protected abstract void onScanning(BleDevice bleDevice);
 
-    public abstract void onScanFinished(List<BleDevice> bleDeviceList);
+    protected abstract void onScanFinished(List<BleDevice> bleDeviceList);
 }

@@ -40,7 +40,7 @@ public class CharacteristicOperationFragment extends Fragment {
   public static final int PROPERTY_INDICATE = 5;
 
   private LinearLayout layout_container;
-  private List<String> childList = new ArrayList<>();
+  private final List<String> childList = new ArrayList<>();
 
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -101,41 +101,39 @@ public class CharacteristicOperationFragment extends Fragment {
           Button btn_descriptors = view_add.findViewById(R.id.btn_descriptors);
           btn_descriptors.setText(getActivity().getString(R.string.descriptors));
           btn_descriptors.setVisibility(View.VISIBLE);
-          btn_descriptors.setOnClickListener(view1 -> {
-            runOnUiThread(() -> {
-                  List<BluetoothGattDescriptor> descriptors = characteristic.getDescriptors();
-                  for (BluetoothGattDescriptor descriptor : descriptors) {
-                    BleManager.getInstance()
-                        .readDescriptor(bleDevice, characteristic.getService().getUuid().toString(),
-                            characteristic.getUuid().toString(),
-                            descriptor.getUuid().toString(),
-                            new BleReadDescriptorCallback() {
-                              BluetoothGattDescriptor descriptorToRead = descriptor;
+          btn_descriptors.setOnClickListener(view1 -> runOnUiThread(() -> {
+                List<BluetoothGattDescriptor> descriptors = characteristic.getDescriptors();
+                for (BluetoothGattDescriptor descriptor : descriptors) {
+                  BleManager.getInstance()
+                      .readDescriptor(bleDevice, characteristic.getService().getUuid().toString(),
+                          characteristic.getUuid().toString(),
+                          descriptor.getUuid().toString(),
+                          new BleReadDescriptorCallback() {
+                            BluetoothGattDescriptor descriptorToRead = descriptor;
 
-                              @Override
-                              public void onSuccess(byte[] data) {
+                            @Override
+                            public void onSuccess(byte[] data) {
 
-                                String value = HexUtil.formatHexString(data);
-                                if (isPrintable(data)) {
-                                  value = value + "(" + new String(data) + ")";
-                                }
-
-                                String descInfo =
-                                    getActivity().getString(R.string.descriptors) + " " + descriptor
-                                        .getUuid().toString() + " -> " + value;
-                                Log.i("Descriptor", descInfo);
-                                addText(txt, descInfo);
+                              String value = HexUtil.formatHexString(data);
+                              if (isPrintable(data)) {
+                                value = value + "(" + new String(data) + ")";
                               }
 
-                              @Override
-                              public void onFailure(BleException exception) {
-                                addText(txt, exception.toString());
-                              }
-                            });
-                  }
+                              String descInfo =
+                                  getActivity().getString(R.string.descriptors) + " " + descriptor
+                                      .getUuid().toString() + " -> " + value;
+                              Log.i("Descriptor", descInfo);
+                              addText(txt, descInfo);
+                            }
+
+                            @Override
+                            public void onFailure(BleException exception) {
+                              addText(txt, exception.toString());
+                            }
+                          });
                 }
-            );
-          });
+              }
+          ));
           Button btn = view_add.findViewById(R.id.btn);
           btn.setText(getActivity().getString(R.string.read));
           btn.setOnClickListener(view12 -> BleManager.getInstance().read(

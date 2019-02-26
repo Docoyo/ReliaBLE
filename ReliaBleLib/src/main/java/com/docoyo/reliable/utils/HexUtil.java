@@ -12,11 +12,11 @@ public class HexUtil {
         return encodeHex(data, true);
     }
 
-    public static char[] encodeHex(byte[] data, boolean toLowerCase) {
+    private static char[] encodeHex(byte[] data, boolean toLowerCase) {
         return encodeHex(data, toLowerCase ? DIGITS_LOWER : DIGITS_UPPER);
     }
 
-    protected static char[] encodeHex(byte[] data, char[] toDigits) {
+    private static char[] encodeHex(byte[] data, char[] toDigits) {
         if (data == null)
             return null;
         int l = data.length;
@@ -33,12 +33,12 @@ public class HexUtil {
         return encodeHexStr(data, true);
     }
 
-    public static String encodeHexStr(byte[] data, boolean toLowerCase) {
+    private static String encodeHexStr(byte[] data, boolean toLowerCase) {
         return encodeHexStr(data, toLowerCase ? DIGITS_LOWER : DIGITS_UPPER);
     }
 
 
-    protected static String encodeHexStr(byte[] data, char[] toDigits) {
+    private static String encodeHexStr(byte[] data, char[] toDigits) {
         return new String(encodeHex(data, toDigits));
     }
 
@@ -50,14 +50,15 @@ public class HexUtil {
         if (data == null || data.length < 1)
             return "";
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < data.length; i++) {
-            String hex = Integer.toHexString(data[i] & 0xFF);
+        for (byte aData : data) {
+            String hex = Integer.toHexString(aData & 0xFF);
             if (hex.length() == 1) {
                 hex = '0' + hex;
             }
             sb.append(hex);
-            if (addSpace)
+            if (addSpace) {
                 sb.append(" ");
+            }
         }
         return sb.toString().trim();
     }
@@ -85,7 +86,7 @@ public class HexUtil {
     }
 
 
-    protected static int toDigit(char ch, int index) {
+    private static int toDigit(char ch, int index) {
         int digit = Character.digit(ch, 16);
         if (digit == -1) {
             throw new RuntimeException("Illegal hexadecimal character " + ch
@@ -111,7 +112,7 @@ public class HexUtil {
         return d;
     }
 
-    public static byte charToByte(char c) {
+    private static byte charToByte(char c) {
         return (byte) "0123456789ABCDEF".indexOf(c);
     }
 

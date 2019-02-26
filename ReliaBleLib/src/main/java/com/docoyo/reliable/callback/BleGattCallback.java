@@ -24,6 +24,6 @@ public abstract class BleGattCallback extends BluetoothGattCallback {
     return runOnUiThread;
   }
 
-  private boolean runOnUiThread = Looper.getMainLooper().getThread() == Thread.currentThread();
+  private final boolean runOnUiThread = Looper.getMainLooper().getThread() == Thread.currentThread();
 
 }

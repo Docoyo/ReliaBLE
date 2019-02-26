@@ -19,8 +19,8 @@ import java.util.List;
 
 public class DeviceAdapter extends BaseAdapter {
 
-    private Context context;
-    private List<BleDevice> bleDeviceList;
+    private final Context context;
+    private final List<BleDevice> bleDeviceList;
 
     public DeviceAdapter(Context context) {
         this.context = context;
@@ -125,30 +125,21 @@ public class DeviceAdapter extends BaseAdapter {
             }
         }
 
-        holder.btn_connect.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (mListener != null) {
-                    mListener.onConnect(bleDevice);
-                }
+        holder.btn_connect.setOnClickListener(view -> {
+            if (mListener != null) {
+                mListener.onConnect(bleDevice);
             }
         });
 
-        holder.btn_disconnect.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (mListener != null) {
-                    mListener.onDisConnect(bleDevice);
-                }
+        holder.btn_disconnect.setOnClickListener(view -> {
+            if (mListener != null) {
+                mListener.onDisConnect(bleDevice);
             }
         });
 
-        holder.btn_detail.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (mListener != null) {
-                    mListener.onDetail(bleDevice);
-                }
+        holder.btn_detail.setOnClickListener(view -> {
+            if (mListener != null) {
+                mListener.onDetail(bleDevice);
             }
         });
 

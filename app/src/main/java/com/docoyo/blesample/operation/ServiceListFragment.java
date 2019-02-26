@@ -43,13 +43,10 @@ public class ServiceListFragment extends Fragment {
         mResultAdapter = new ResultAdapter(getActivity());
         ListView listView_device = v.findViewById(R.id.list_service);
         listView_device.setAdapter(mResultAdapter);
-        listView_device.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                BluetoothGattService service = mResultAdapter.getItem(position);
-                ((OperationActivity) getActivity()).setBluetoothGattService(service);
-                ((OperationActivity) getActivity()).changePage(1);
-            }
+        listView_device.setOnItemClickListener((parent, view, position, id) -> {
+            BluetoothGattService service = mResultAdapter.getItem(position);
+            ((OperationActivity) getActivity()).setBluetoothGattService(service);
+            ((OperationActivity) getActivity()).changePage(1);
         });
     }
 
@@ -71,8 +68,8 @@ public class ServiceListFragment extends Fragment {
 
     private class ResultAdapter extends BaseAdapter {
 
-        private Context context;
-        private List<BluetoothGattService> bluetoothGattServices;
+        private final Context context;
+        private final List<BluetoothGattService> bluetoothGattServices;
 
         ResultAdapter(Context context) {
             this.context = context;

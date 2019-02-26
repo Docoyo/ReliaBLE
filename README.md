@@ -10,7 +10,7 @@ Will support:
 - Support custom scan rules
 - Support multi device connections
 - Support reconnection  
-- Support configuration timeout for conncet or operation  
+- Support configuration timeout for connect or operation
 
 
 ## License

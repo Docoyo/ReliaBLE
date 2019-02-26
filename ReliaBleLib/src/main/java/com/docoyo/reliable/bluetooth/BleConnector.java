@@ -37,11 +37,11 @@ public class BleConnector {
 
   private final BleManager mBleManager;
 
-  private BluetoothGatt mBluetoothGatt;
+  private final BluetoothGatt mBluetoothGatt;
   private BluetoothGattService mGattService;
   private BluetoothGattCharacteristic mCharacteristic;
-  private BleBluetooth mBleBluetooth;
-  private Handler mHandler;
+  private final BleBluetooth mBleBluetooth;
+  private final Handler mHandler;
   private BluetoothGattDescriptor mDescriptor;
 
   BleConnector(BleBluetooth bleBluetooth) {
@@ -123,6 +123,7 @@ public class BleConnector {
       }
 
       private void handleByteResult(Message msg) {
+        @SuppressWarnings("unchecked")
         List<BleCommand> bleCommands = (List<BleCommand>) msg.obj;
         Bundle bundle = msg.getData();
         int status = bundle.getInt(BleMsg.KEY_BLE_BUNDLE_STATUS);
@@ -143,6 +144,7 @@ public class BleConnector {
       }
 
       private void handleIntResult(Message msg) {
+        @SuppressWarnings("unchecked")
         List<BleCommand> bleCommands = (List<BleCommand>) msg.obj;
         Bundle bundle = msg.getData();
         int status = bundle.getInt(BleMsg.KEY_BLE_BUNDLE_STATUS);
@@ -163,6 +165,7 @@ public class BleConnector {
       }
 
       private void handleDataChange(Message msg) {
+        @SuppressWarnings("unchecked")
         List<BleCommand> bleCommands = (List<BleCommand>) msg.obj;
         Bundle bundle = msg.getData();
         byte[] value = bundle.getByteArray(BleMsg.KEY_BLE_BUNDLE_VALUE);
@@ -178,6 +181,7 @@ public class BleConnector {
       }
 
       private void handleStartStop(Message msg) {
+        @SuppressWarnings("unchecked")
         List<BleCommand> bleCommands = (List<BleCommand>) msg.obj;
 
         if (bleCommands != null) {
@@ -216,13 +220,8 @@ public class BleConnector {
     return this;
   }
 
-  public BleConnector withUUIDString(String serviceUUID, String characteristicUUID) {
+  private BleConnector withUUIDString(String serviceUUID, String characteristicUUID) {
     return withUUID(formUUID(serviceUUID), formUUID(characteristicUUID), null);
-  }
-
-  public BleConnector withUUIDString(String serviceUUID, String characteristicUUID,
-      String descriptorUUID) {
-    return withUUID(formUUID(serviceUUID), formUUID(characteristicUUID), formUUID(descriptorUUID));
   }
 
   private UUID formUUID(String uuid) {
@@ -231,6 +230,15 @@ public class BleConnector {
 
   /*------------------------------- main operation ----------------------------------- */
 
+  /**
+   * Handles the execution of BleCommands. All methods that are called return true if they have
+   * handled the callback and false otherwise. In case they return false, the BleCommand is handled
+   * by calling the respective android functionality and handling the return in the BleBluetooth
+   * class.
+   *
+   * @param command
+   * @return true if the command has been handled, false otherwise
+   */
   public boolean executeCommand(BleCommand command) {
     withUUIDString(command.getServiceUuid(), command.getCharacteristicsUuid());
     if (mCharacteristic == null) {
@@ -271,9 +279,9 @@ public class BleConnector {
 
   /**
    * Enables notification for this callback. If notification for characteristics is already enabled
-   * it only adds the callback. Oterwise notification is turned on for this characteristic.
+   * it only adds the callback. Otherwise notification is turned on for this characteristic.
    */
-  public boolean enableCharacteristicNotify(BleCommand command) {
+  private boolean enableCharacteristicNotify(BleCommand command) {
     if ((mCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_NOTIFY) <= 0) {
       return handleError(command.getCallback(),
           new OtherException("this characteristic not support notify!"));
@@ -282,7 +290,7 @@ public class BleConnector {
     BleNotifyOrIndicateCallback callback = (BleNotifyOrIndicateCallback) command.getCallback();
     if (mBleBluetooth.addCommand(command) > 1) {
       mBleManager
-          .runBleCallbackMethodInContext(() -> callback.onStart(), callback.isRunOnUiThread());
+          .runBleCallbackMethodInContext(callback::onStart, callback.isRunOnUiThread());
       return true;
     }
 
@@ -301,7 +309,7 @@ public class BleConnector {
    *
    * @return True if the notification stop was already handled, false otherwise.
    */
-  public boolean disableCharacteristicNotify(BleCommand command) {
+  private boolean disableCharacteristicNotify(BleCommand command) {
     BleNotifyOrIndicateCallback callback =
         (BleNotifyOrIndicateCallback) command.getCallback();
 
@@ -331,9 +339,6 @@ public class BleConnector {
     return false;
   }
 
-  /**
-   * notify setting
-   */
   private boolean setCharacteristic(BluetoothGatt gatt,
       BluetoothGattCharacteristic characteristic,
       BleNotifyOrIndicateCallback notifyOrIndicateCallback, byte[] value) {
@@ -367,10 +372,7 @@ public class BleConnector {
     }
   }
 
-  /**
-   * write
-   */
-  public boolean writeCharacteristic(
+  private boolean writeCharacteristic(
       BleCommand command) {
     command.setHandler(mHandler);
     if (mCharacteristic == null
@@ -394,10 +396,7 @@ public class BleConnector {
     return false;
   }
 
-  /**
-   * read
-   */
-  public boolean readCharacteristic(BleCommand command) {
+  private boolean readCharacteristic(BleCommand command) {
     if ((mCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_READ) <= 0) {
       return handleError(command.getCallback(),
           new OtherException("this characteristic not support read!"));
@@ -412,10 +411,7 @@ public class BleConnector {
     return false;
   }
 
-  /**
-   * read
-   */
-  public boolean readDescriptor(BleCommand command) {
+  private boolean readDescriptor(BleCommand command) {
     mDescriptor = mCharacteristic.getDescriptor(UUID.fromString(command.getDescriptorUuid()));
     if (mDescriptor == null) {
       return handleError(command.getCallback(),
@@ -435,10 +431,7 @@ public class BleConnector {
     return false;
   }
 
-  /**
-   * rssi
-   */
-  public boolean readRemoteRssi(BleCommand command) {
+  private boolean readRemoteRssi(BleCommand command) {
     mBleBluetooth.addCommand(command);
     if (!mBluetoothGatt.readRemoteRssi()) {
       mBleBluetooth.removeCommand(command);
@@ -447,10 +440,7 @@ public class BleConnector {
     return false;
   }
 
-  /**
-   * set mtu
-   */
-  public boolean setMtu(BleCommand command) {
+  private boolean setMtu(BleCommand command) {
     command.setHandler(mHandler);
     mBleBluetooth.addCommand(command);
     if (!mBluetoothGatt.requestMtu(command.getValueInt())) {
@@ -458,18 +448,6 @@ public class BleConnector {
       return handleError(command.getCallback(), new OtherException("gatt requestMtu fail"));
     }
     return false;
-  }
-
-  /**
-   * requestConnectionPriority
-   *
-   * @param connectionPriority Request a specific connection priority. Must be one of {@link
-   * BluetoothGatt#CONNECTION_PRIORITY_BALANCED}, {@link BluetoothGatt#CONNECTION_PRIORITY_HIGH} or
-   * {@link BluetoothGatt#CONNECTION_PRIORITY_LOW_POWER}.
-   * @throws IllegalArgumentException If the parameters are outside of their specified range.
-   */
-  public boolean requestConnectionPriority(int connectionPriority) {
-    return mBluetoothGatt.requestConnectionPriority(connectionPriority);
   }
 
 

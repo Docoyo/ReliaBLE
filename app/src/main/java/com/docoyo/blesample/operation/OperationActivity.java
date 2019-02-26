@@ -29,7 +29,7 @@ public class OperationActivity extends AppCompatActivity implements Observer {
     private int charaProp;
 
     private Toolbar toolbar;
-    private List<Fragment> fragments = new ArrayList<>();
+    private final List<Fragment> fragments = new ArrayList<>();
     private int currentPage = 0;
     private String[] titles = new String[3];
 
@@ -78,15 +78,12 @@ public class OperationActivity extends AppCompatActivity implements Observer {
         toolbar.setTitle(titles[0]);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (currentPage != 0) {
-                    currentPage--;
-                    changePage(currentPage);
-                } else {
-                    finish();
-                }
+        toolbar.setNavigationOnClickListener(view -> {
+            if (currentPage != 0) {
+                currentPage--;
+                changePage(currentPage);
+            } else {
+                finish();
             }
         });
     }

@@ -374,20 +374,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             .setTitle(R.string.notifyTitle)
                             .setMessage(R.string.gpsNotifyMsg)
                             .setNegativeButton(R.string.cancel,
-                                    new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialog, int which) {
-                                            finish();
-                                        }
-                                    })
+                                (dialog, which) -> finish())
                             .setPositiveButton(R.string.setting,
-                                    new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialog, int which) {
-                                            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                                            startActivityForResult(intent, REQUEST_CODE_OPEN_GPS);
-                                        }
-                                    })
+                                (dialog, which) -> {
+                                    Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                                    startActivityForResult(intent, REQUEST_CODE_OPEN_GPS);
+                                })
 
                             .setCancelable(false)
                             .show();

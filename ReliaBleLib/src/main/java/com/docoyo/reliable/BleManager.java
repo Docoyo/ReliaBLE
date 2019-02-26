@@ -239,24 +239,24 @@ public class BleManager {
   }
 
 
-  /**
-   * Get operate split Write Num
-   */
-  public int getSplitWriteNum() {
-    return splitWriteNum;
-  }
-
-  /**
-   * Set split Writ eNum
-   *
-   * @return BleManager
-   */
-  public BleManager setSplitWriteNum(int num) {
-    if (num > 0) {
-      this.splitWriteNum = num;
-    }
-    return this;
-  }
+  //TODO: Support
+//  /**
+//   * Get operate split Write Num
+//   */
+//  public int getSplitWriteNum() {
+//    return splitWriteNum;
+//  }
+//  /**
+//   * Set split Writ eNum
+//   *
+//   * @return BleManager
+//   */
+//  public BleManager setSplitWriteNum(int num) {
+//    if (num > 0) {
+//      this.splitWriteNum = num;
+//    }
+//    return this;
+//  }
 
   /**
    * Get operate connect Over Time
@@ -296,7 +296,7 @@ public class BleManager {
       throw new IllegalArgumentException("BleScanCallback can not be Null!");
     }
 
-    if (!isBlueEnable()) {
+    if (!isBluetoothEnabled()) {
       BleLog.e("Bluetooth not enable!");
       callback.onScanStarted(false);
       return;
@@ -319,7 +319,7 @@ public class BleManager {
       throw new IllegalArgumentException("BleScanAndConnectCallback can not be Null!");
     }
 
-    if (!isBlueEnable()) {
+    if (!isBluetoothEnabled()) {
       BleLog.e("Bluetooth not enable!");
       callback.onScanStarted(false);
       return;
@@ -343,7 +343,7 @@ public class BleManager {
       throw new IllegalArgumentException("BleGattCallback can not be Null!");
     }
 
-    if (!isBlueEnable()) {
+    if (!isBluetoothEnabled()) {
       BleLog.e("Bluetooth not enable!");
       bleGattCallback.onConnectFail(bleDevice, new OtherException("Bluetooth not enable!"));
       return null;
@@ -398,7 +398,8 @@ public class BleManager {
     if (bleBluetooth == null) {
       callback.onFailure(new OtherException("This device not connect!"));
     } else {
-      bleBluetooth.enqueueCommand(BleCommandType.NOTIFY, uuid_service, uuid_characteristic, null, callback);
+      bleBluetooth
+          .enqueueCommand(BleCommandType.NOTIFY, uuid_service, uuid_characteristic, null, callback);
     }
   }
 
@@ -415,7 +416,8 @@ public class BleManager {
       callback.onFailure(new OtherException("This device not connect!"));
     } else {
       bleBluetooth
-          .enqueueCommand(BleCommandType.NOTIFY_STOP, uuid_service, uuid_characteristic, null, callback);
+          .enqueueCommand(BleCommandType.NOTIFY_STOP, uuid_service, uuid_characteristic, null,
+              callback);
     }
   }
 
@@ -429,15 +431,15 @@ public class BleManager {
       byte[] data,
       BleWriteCallback callback) {
 
-     BleBluetooth bleBluetooth = multipleBluetoothController.getBleBluetooth(bleDevice);
+    BleBluetooth bleBluetooth = multipleBluetoothController.getBleBluetooth(bleDevice);
     if (bleBluetooth == null) {
       callback.onFailure(new OtherException("This device not connect!"));
-    } else if(data == null || data.length <= 0){
+    } else if (data == null || data.length <= 0) {
       callback.onFailure(new OtherException("the data to be written is empty"));
-    }
-    else {
+    } else {
       bleBluetooth
-          .enqueueCommand(BleCommandType.WRITE, uuidService, uuidCharacteristic, null, callback, data);
+          .enqueueCommand(BleCommandType.WRITE, uuidService, uuidCharacteristic, null, callback,
+              data);
     }
   }
 
@@ -498,7 +500,8 @@ public class BleManager {
     if (bleBluetooth == null) {
       callback.onFailure(new OtherException("This device is not connected!"));
     } else {
-      bleBluetooth.enqueueCommand(BleCommandType.READ, uuid_service, uuid_characteristic, null, callback);
+      bleBluetooth
+          .enqueueCommand(BleCommandType.READ, uuid_service, uuid_characteristic, null, callback);
     }
   }
 
@@ -518,14 +521,15 @@ public class BleManager {
       callback.onFailure(new OtherException("This device is not connected!"));
     } else {
       bleBluetooth
-          .enqueueCommand(BleCommandType.READ_DESCRIPTOR, uuid_service, uuid_characteristic, uuid_descriptor,
+          .enqueueCommand(BleCommandType.READ_DESCRIPTOR, uuid_service, uuid_characteristic,
+              uuid_descriptor,
               callback);
     }
   }
 
 
   /**
-   * read Rssi
+   * Reads the RSSI of the device
    */
   public void readRssi(BleDevice bleDevice,
       BleRssiCallback callback) {
@@ -537,7 +541,7 @@ public class BleManager {
     if (bleBluetooth == null) {
       callback.onFailure(new OtherException("This device is not connected!"));
     } else {
-            bleBluetooth
+      bleBluetooth
           .enqueueCommand(BleCommandType.READ_RSSI, BleCommandType.READ_RSSI.name(), null, null,
               callback);
     }
@@ -545,7 +549,7 @@ public class BleManager {
 
 
   /**
-   * set Mtu
+   * Sets the MTU in the connection with the device
    */
   public void setMtu(BleDevice bleDevice,
       int mtu,
@@ -570,39 +574,40 @@ public class BleManager {
     if (bleBluetooth == null) {
       callback.onFailure(new OtherException("This device is not connected!"));
     } else {
-            bleBluetooth
+      bleBluetooth
           .enqueueCommand(BleCommandType.SET_MTU, BleCommandType.SET_MTU.name(), null, null,
               callback, mtu);
     }
   }
 
-  /**
-   * requestConnectionPriority
-   *
-   * @param connectionPriority Request a specific connection priority. Must be one of {@link
-   * BluetoothGatt#CONNECTION_PRIORITY_BALANCED}, {@link BluetoothGatt#CONNECTION_PRIORITY_HIGH} or
-   * {@link BluetoothGatt#CONNECTION_PRIORITY_LOW_POWER}.
-   * @throws IllegalArgumentException If the parameters are outside of their specified range.
-   */
-  public boolean requestConnectionPriority(BleDevice bleDevice, int connectionPriority) {
-    BleBluetooth bleBluetooth = multipleBluetoothController.getBleBluetooth(bleDevice);
-    if (bleBluetooth == null) {
-      return false;
-    } else {
-      return bleBluetooth.newBleConnector().requestConnectionPriority(connectionPriority);
-    }
-  }
+  //TODO: Support functionality
+//  /**
+//   * requestConnectionPriority
+//   *
+//   * @param connectionPriority Request a specific connection priority. Must be one of {@link
+//   * BluetoothGatt#CONNECTION_PRIORITY_BALANCED}, {@link BluetoothGatt#CONNECTION_PRIORITY_HIGH} or
+//   * {@link BluetoothGatt#CONNECTION_PRIORITY_LOW_POWER}.
+//   * @throws IllegalArgumentException If the parameters are outside of their specified range.
+//   */
+//  public boolean requestConnectionPriority(BleDevice bleDevice, int connectionPriority) {
+//    BleBluetooth bleBluetooth = multipleBluetoothController.getBleBluetooth(bleDevice);
+//    if (bleBluetooth == null) {
+//      return false;
+//    } else {
+//      return bleBluetooth.newBleConnector().requestConnectionPriority(connectionPriority);
+//    }
+//  }
 
   /**
-   * is support ble?
+   * Check if device supports BLE
    */
   public boolean isSupportBle() {
     return context.getApplicationContext().getPackageManager()
-    .hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
+        .hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
   }
 
   /**
-   * Open bluetooth
+   * Enable bluetooth
    */
   public void enableBluetooth() {
     if (bluetoothAdapter != null) {
@@ -622,9 +627,9 @@ public class BleManager {
   }
 
   /**
-   * judge Bluetooth is enable
+   * Check if Bluetooth is enable
    */
-  public boolean isBlueEnable() {
+  public boolean isBluetoothEnabled() {
     return bluetoothAdapter != null && bluetoothAdapter.isEnabled();
   }
 

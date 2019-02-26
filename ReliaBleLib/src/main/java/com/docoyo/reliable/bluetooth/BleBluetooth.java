@@ -35,14 +35,14 @@ import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
 
 public class BleBluetooth {
 
-  private HashMap<String, List<BleCommand>> bleCommandHashMap = new HashMap<>();
+  private final HashMap<String, List<BleCommand>> bleCommandHashMap = new HashMap<>();
 
   private LastState lastState;
   private boolean isActiveDisconnect = false;
-  private BleDevice bleDevice;
+  private final BleDevice bleDevice;
   private BluetoothGatt bluetoothGatt;
-  private BleQueue bleQueue;
-  private MainHandler mainHandler = new MainHandler(BleManager.getInstance().getBgLooper());
+  private final BleQueue bleQueue;
+  private final MainHandler mainHandler = new MainHandler(BleManager.getInstance().getBgLooper());
   private int connectRetryCount = 0;
   private BleGattCallback bleConnectGattCallback;
 
@@ -56,7 +56,7 @@ public class BleBluetooth {
   }
 
   /**
-   * Adds a callback to the callback list and retuns the length of the list for the respective uuid
+   * Adds a callback to the callback list and returns the length of the list for the respective uuid
    */
   synchronized int addCommand(BleCommand command) {
     List<BleCommand> commands = bleCommandHashMap.get(command.getUuid());
@@ -82,16 +82,6 @@ public class BleBluetooth {
       bleCommandHashMap.remove(command.getUuid());
       return 0;
     }
-  }
-
-  synchronized int getQueueSize(BleCommand command) {
-    List<BleCommand> commands = bleCommandHashMap.get(command.getUuid());
-    if (commands == null) {
-      return 0;
-    }
-
-    return commands.size();
-
   }
 
   public String getDeviceKey() {
@@ -135,7 +125,7 @@ public class BleBluetooth {
     return connect(bleDevice, autoConnect, callback, 0);
   }
 
-  public synchronized BluetoothGatt connect(BleDevice bleDevice,
+  private synchronized BluetoothGatt connect(BleDevice bleDevice,
       boolean autoConnect,
       BleGattCallback callback,
       int connectRetryCount) {
@@ -365,7 +355,7 @@ public class BleBluetooth {
 
   }
 
-  private BluetoothGattCallback coreGattCallback = new BluetoothGattCallback() {
+  private final BluetoothGattCallback coreGattCallback = new BluetoothGattCallback() {
 
     @Override
     public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
@@ -431,16 +421,15 @@ public class BleBluetooth {
       }
     }
 
-    private void handleBleResponseDescriptor(BleCommandType type, int messageId,
-        BluetoothGattDescriptor descriptor, int status, boolean removeCallback) {
-      BleCommand command = BleCommand.fromDescriptor(type, descriptor);
+    private void handleBleResponseDescriptor(BluetoothGattDescriptor descriptor, int status) {
+      BleCommand command = BleCommand.fromDescriptor(BleCommandType.READ_DESCRIPTOR, descriptor);
       List<BleCommand> bleCommands = bleCommandHashMap.get(command.getUuid());
 
       if (bleCommands != null && !bleCommands.isEmpty()) {
         Handler handler = bleCommands.get(0).getHandler();
         if (handler != null) {
           Message message = handler.obtainMessage();
-          message.what = messageId;
+          message.what = BleMsg.MSG_CHA_READ_RESULT;
           message.obj = bleCommands;
           Bundle bundle = new Bundle();
           bundle.putInt(BleMsg.KEY_BLE_BUNDLE_STATUS, status);
@@ -448,11 +437,9 @@ public class BleBluetooth {
           message.setData(bundle);
           handler.sendMessage(message);
         }
-        if (removeCallback) {
-          bleCommandHashMap.remove(bleCommands.get(0).getUuid());
-          bleQueue.getHandler().obtainMessage(Messages.MSG_DEQUEUE, bleCommands.get(0))
-              .sendToTarget();
-        }
+        bleCommandHashMap.remove(bleCommands.get(0).getUuid());
+        bleQueue.getHandler().obtainMessage(Messages.MSG_DEQUEUE, bleCommands.get(0))
+            .sendToTarget();
       }
     }
 
@@ -557,8 +544,8 @@ public class BleBluetooth {
         int status) {
       super.onDescriptorRead(gatt, descriptor, status);
 
-      handleBleResponseDescriptor(BleCommandType.READ_DESCRIPTOR, BleMsg.MSG_CHA_READ_RESULT,
-          descriptor, status, true);
+      handleBleResponseDescriptor(
+          descriptor, status);
     }
 
     @Override

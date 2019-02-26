@@ -6,7 +6,7 @@ import android.util.Log;
 public final class BleLog {
 
     public static boolean isPrint = true;
-    private static String defaultTag = "ReliaBLE";
+    private static final String defaultTag = "ReliaBLE";
 
     public static void d(String msg) {
         if (isPrint && msg != null)

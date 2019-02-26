@@ -24,7 +24,7 @@ public class BleDevice implements Parcelable {
         mTimestampNanos = timestampNanos;
     }
 
-    protected BleDevice(Parcel in) {
+    private BleDevice(Parcel in) {
         mDevice = in.readParcelable(BluetoothDevice.class.getClassLoader());
         mScanRecord = in.createByteArray();
         mRssi = in.readInt();

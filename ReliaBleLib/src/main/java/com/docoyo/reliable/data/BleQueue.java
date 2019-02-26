@@ -30,7 +30,7 @@ public class BleQueue {
 
     public static final int MSG_ENQUEUE = 0x100;
     public static final int MSG_DEQUEUE = 0x101;
-    public static final int MSG_TIMEOUT = 0x102;
+    static final int MSG_TIMEOUT = 0x102;
   }
 
   public BleQueue(BleBluetooth bleBluetooth) {
