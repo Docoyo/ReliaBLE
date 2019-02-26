@@ -24,6 +24,7 @@ import com.docoyo.reliable.exception.OtherException;
 import com.docoyo.reliable.exception.TimeoutException;
 
 import com.docoyo.reliable.utils.BleLog;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -91,11 +92,15 @@ public class BleConnector {
             if (bleCommands != null) {
               for (BleCommand bleCommand : bleCommands) {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
-                  ((BleWriteCallback) bleCommand.getCallback())
-                      .onWriteSuccess(BleWriteState.DATA_WRITE_SINGLE,
-                          BleWriteState.DATA_WRITE_SINGLE, value);
+                  mBleManager.runBleCallbackMethodInContext(
+                      () -> ((BleWriteCallback) bleCommand.getCallback())
+                          .onWriteSuccess(BleWriteState.DATA_WRITE_SINGLE,
+                              BleWriteState.DATA_WRITE_SINGLE, value),
+                      bleCommand.getCallback().isRunOnUiThread());
                 } else {
-                  bleCommand.getCallback().onFailure(new GattException(status));
+                  mBleManager.runBleCallbackMethodInContext(
+                      () -> bleCommand.getCallback().onFailure(new GattException(status)),
+                      bleCommand.getCallback().isRunOnUiThread());
                 }
               }
             }
