@@ -56,7 +56,8 @@ public class BleBluetooth {
   }
 
   /**
-   * Adds a callback to the callback list and returns the length of the list for the respective uuid
+   * Adds a callback to the callback list and returns the length of the list for the respective
+   * uuid
    */
   synchronized int addCommand(BleCommand command) {
     List<BleCommand> commands = bleCommandHashMap.get(command.getUuid());
@@ -150,7 +151,9 @@ public class BleBluetooth {
           autoConnect, coreGattCallback);
     }
     if (bluetoothGatt != null) {
-      bleConnectGattCallback.onStartConnect();
+      BleManager.getInstance()
+          .runBleCallbackMethodInContext(() -> bleConnectGattCallback.onStartConnect(),
+              bleConnectGattCallback.isRunOnUiThread());
 
       Message message = mainHandler.obtainMessage();
       message.what = BleMsg.MSG_CONNECT_OVER_TIME;
@@ -164,8 +167,10 @@ public class BleBluetooth {
       BleManager.getInstance().getMultipleBluetoothController()
           .removeConnectingBle(BleBluetooth.this);
       if (bleConnectGattCallback != null) {
-        bleConnectGattCallback
-            .onConnectFail(bleDevice, new OtherException("GATT connect exception occurred!"));
+        BleManager.getInstance()
+            .runBleCallbackMethodInContext(() -> bleConnectGattCallback
+                    .onConnectFail(bleDevice, new OtherException("GATT connect exception occurred!")),
+                bleConnectGattCallback.isRunOnUiThread());
       }
 
     }
