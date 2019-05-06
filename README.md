@@ -1,5 +1,3 @@
-# This code is under heavy development but will be released soon...
-
 # ReliaBLE
 Reliable Android Bluetooth Low Energy Library based on [FastBle](https://github.com/Jasonchenlijian/FastBle)
 
