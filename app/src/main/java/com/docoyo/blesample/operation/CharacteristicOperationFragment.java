@@ -72,7 +72,7 @@ public class CharacteristicOperationFragment extends Fragment {
     final BluetoothGattCharacteristic characteristic = ((OperationActivity) getActivity())
         .getCharacteristic();
     final int charaProp = ((OperationActivity) getActivity()).getCharaProp();
-    String child = characteristic.getUuid().toString() + String.valueOf(charaProp);
+    String child = characteristic.getUuid().toString() + charaProp;
 
     for (int i = 0; i < layout_container.getChildCount(); i++) {
       layout_container.getChildAt(i).setVisibility(View.GONE);
@@ -89,8 +89,8 @@ public class CharacteristicOperationFragment extends Fragment {
       view.setTag(bleDevice.getKey() + characteristic.getUuid().toString() + charaProp);
       LinearLayout layout_add = view.findViewById(R.id.layout_add);
       final TextView txt_title = view.findViewById(R.id.txt_title);
-      txt_title.setText(String.valueOf(
-          characteristic.getUuid().toString() + getActivity().getString(R.string.data_changed)));
+      txt_title.setText(
+          characteristic.getUuid().toString() + getActivity().getString(R.string.data_changed));
       final TextView txt = view.findViewById(R.id.txt);
       txt.setMovementMethod(ScrollingMovementMethod.getInstance());
 

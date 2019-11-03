@@ -3,14 +3,11 @@
 # ReliaBLE
 Reliable Android Bluetooth Low Energy Library based on [FastBle](https://github.com/Jasonchenlijian/FastBle)
 
-Will support:
+The goal was to make the FastBle reliable in bluetooth communication by serializing the requests and answers. We did this by adding a queue for bluetooth requests and sending one request after another to the device. 
 
-- Filtering, scanning, linking, reading, writing, notification subscription and cancellation in a simple way.
-- Supports acquiring signal strength and setting the maximum transmission unit.
-- Support custom scan rules
-- Support multi device connections
-- Support reconnection  
-- Support configuration timeout for connect or operation
+# Basic usage
+
+
 
 
 ## License

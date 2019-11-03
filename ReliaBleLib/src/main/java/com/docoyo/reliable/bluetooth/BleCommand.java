@@ -50,8 +50,8 @@ public class BleCommand {
   }
 
   public String getUuidWithCallback() {
-    return bleCommandType.name() + serviceUuid + characteristicsUuid + descriptorUuid + String
-        .valueOf(callback.hashCode());
+    return bleCommandType.name() + serviceUuid + characteristicsUuid + descriptorUuid + callback
+        .hashCode();
   }
 
   public BleCommandType getBleCommandType() {

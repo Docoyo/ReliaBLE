@@ -145,7 +145,8 @@ public class CharacteristicListFragment extends Fragment {
             BluetoothGattCharacteristic characteristic = characteristicList.get(position);
             String uuid = characteristic.getUuid().toString();
 
-            holder.txt_title.setText(String.valueOf(getActivity().getString(R.string.characteristic) + "（" + position + ")"));
+            holder.txt_title.setText(
+                getActivity().getString(R.string.characteristic) + "（" + position + ")");
             holder.txt_uuid.setText(uuid);
 
             StringBuilder property = new StringBuilder();
@@ -174,12 +175,15 @@ public class CharacteristicListFragment extends Fragment {
                 property.delete(property.length() - 2, property.length() - 1);
             }
             if (property.length() > 0) {
-                holder.txt_type.setText(String.valueOf(getActivity().getString(R.string.characteristic) + "( " + property.toString() + ")"));
+                holder.txt_type.setText(
+                    getActivity().getString(R.string.characteristic) + "( " + property.toString()
+                        + ")");
             }
 
             List<BluetoothGattDescriptor> descriptors = characteristic.getDescriptors();
             if (descriptors != null && !descriptors.isEmpty()){
-                holder.txt_descriptors.setText(getActivity().getString(R.string.descriptors) + " (" + String.valueOf(descriptors.size()) + ") ");
+                holder.txt_descriptors.setText(getActivity().getString(R.string.descriptors) + " (" + descriptors
+                    .size() + ") ");
             }
 
             return convertView;
